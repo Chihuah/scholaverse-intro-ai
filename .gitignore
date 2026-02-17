@@ -7,7 +7,18 @@ wheels/
 *.egg-info
 .pytest_cache/
 *.log
-.env
 
 # Virtual environments
 .venv/
+
+# Environment variables (contains secrets)
+.env
+
+# Database
+data/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Local test account setup (contains real email/student_id)
+scripts/setup_test_accounts.py

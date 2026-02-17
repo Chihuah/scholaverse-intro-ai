@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Scholaverse - 儀表板{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="pixel-title text-lg sm:text-xl mb-2">儀表板</h1>
+  <p class="text-rpg-text-dim text-sm">
+    {% if user %}歡迎回來，{{ user.name | default('冒險者') }}！{% else %}歡迎來到 Scholaverse{% endif %}
+  </p>
+</div>
+
+<!-- Dashboard Grid: Character Preview + Learning Progress -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Character Preview Panel -->
+  <div class="pixel-panel">
+    <h2 class="pixel-title text-xs mb-4">角色預覽</h2>
+    <div class="flex flex-col items-center gap-4">
+      {% if latest_card and latest_card.image_url %}
+      <div class="card-frame card-frame-{{ latest_card.border_style | default('copper') }} w-48 h-64 flex items-center justify-center overflow-hidden">
+        <img src="{{ latest_card.image_url }}" alt="角色卡牌"
+             class="w-full h-full object-cover" style="image-rendering: pixelated;">
+      </div>
+      <div class="text-center">
+        <p class="text-rpg-gold font-semibold text-sm">
+          Lv.{{ latest_card.level_number | default('--') }}
+          {% if latest_card.config_snapshot %}
+            {% set config = latest_card.config_snapshot | tojson | default('{}') %}
+          {% endif %}
+        </p>
+        <p class="text-rpg-text-dim text-xs mt-1">
+          <a href="/cards/{{ latest_card.id }}" class="text-rpg-gold hover:underline">查看卡牌詳情</a>
+        </p>
+      </div>
+      {% else %}
+      <div class="card-frame card-frame-copper w-48 h-64 flex items-center justify-center bg-rpg-bg-deep">
+        <div class="text-center">
+          <div class="text-rpg-text-dim text-4xl mb-2">?</div>
+          <p class="text-rpg-text-dim text-xs">尚未生成卡牌</p>
+        </div>
+      </div>
+      <div class="text-center">
+        <p class="text-rpg-text-dim text-sm">Lv.-- ------</p>
+        <p class="text-rpg-text-dim text-xs mt-1">完成學習單元以解鎖角色屬性</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Learning Progress Panel -->
+  <div class="pixel-panel">
+    <h2 class="pixel-title text-xs mb-4">學習進度</h2>
+    <div class="flex flex-col gap-4">
+      {% for unit in units %}
+      {% set record = records_by_unit.get(unit.id) %}
+      {% set rate = record.completion_rate | default(0) if record else 0 %}
+      <div>
+        <div class="flex justify-between items-baseline mb-1">
+          <span class="text-sm font-semibold">{{ unit.name }}</span>
+          <span class="text-xs text-rpg-text-dim">{{ unit.unlock_attribute }}</span>
+        </div>
+        <div class="rpg-progress-bar">
+          {% if record %}
+            {% if rate >= 80 %}
+          <div class="bar-fill" style="width: {{ rate }}%;"></div>
+            {% elif rate >= 40 %}
+          <div class="bar-fill bar-warning" style="width: {{ rate }}%;"></div>
+            {% else %}
+          <div class="bar-fill bar-danger" style="width: {{ rate }}%;"></div>
+            {% endif %}
+          {% else %}
+          <div class="bar-fill bar-locked" style="width: 0%;"></div>
+          {% endif %}
+        </div>
+        <div class="text-right mt-1">
+          {% if record %}
+          <span class="text-xs text-rpg-text-dim font-mono">{{ rate | round(0) | int }} / 100</span>
+          {% else %}
+          <span class="text-xs text-rpg-text-dim font-mono">🔒 未解鎖</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if not units %}
+      <p class="text-rpg-text-dim text-sm">尚無學習單元資料。</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Divider -->
+<div class="pixel-divider" aria-hidden="true"></div>
+
+<!-- Quick Actions -->
+<div class="pixel-panel mb-6">
+  <h2 class="pixel-title text-xs mb-4">快速操作</h2>
+  <div class="flex flex-wrap gap-4">
+    <a href="/cards" class="pixel-btn">我的卡牌</a>
+    <a href="/hall" class="pixel-btn">角色大廳</a>
+    <a href="/progress" class="pixel-btn">學習歷程</a>
+    {% if user and user.role in ['teacher', 'admin'] %}
+    <a href="/admin" class="pixel-btn pixel-btn-gold">管理後台</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Divider -->
+<div class="pixel-divider" aria-hidden="true"></div>
+
+<!-- Token Balance -->
+<div class="pixel-panel">
+  <div class="flex items-center gap-3">
+    <h2 class="pixel-title text-xs">代幣餘額</h2>
+    <span class="token-badge text-lg">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor">
+        <circle cx="8" cy="8" r="7" fill="#ffd700" stroke="#8b6914" stroke-width="1"/>
+        <text x="8" y="11" text-anchor="middle" font-size="8" fill="#8b6914" font-weight="bold">$</text>
+      </svg>
+      {% if user %}{{ user.tokens | default(0) }}{% else %}0{% endif %}
+    </span>
+  </div>
+  <p class="text-rpg-text-dim text-xs mt-2">
+    完成問卷與練習可獲得代幣，用於重新生成卡牌或修改角色配置。
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="168" viewBox="0 0 120 168">
+  <!-- Card background -->
+  <rect width="120" height="168" rx="4" fill="#1a1a2e"/>
+  <!-- Gold border -->
+  <rect x="2" y="2" width="116" height="164" rx="3" fill="none" stroke="#d4a847" stroke-width="2"/>
+  <!-- Image area -->
+  <rect x="8" y="24" width="104" height="100" rx="2" fill="#2d3a1a" stroke="#8b6914" stroke-width="1"/>
+  <!-- Placeholder icon (sword) -->
+  <g transform="translate(60,74)" fill="#d4a847" opacity="0.5">
+    <rect x="-2" y="-24" width="4" height="32" rx="1"/>
+    <rect x="-8" y="4" width="16" height="4" rx="1"/>
+    <polygon points="-2,-24 2,-24 0,-28"/>
+  </g>
+  <!-- Title -->
+  <text x="60" y="16" text-anchor="middle" fill="#d4a847" font-family="monospace" font-size="6" font-weight="bold">PLACEHOLDER</text>
+  <!-- Stats area -->
+  <rect x="8" y="130" width="104" height="30" rx="2" fill="#2d3a1a" stroke="#8b6914" stroke-width="1"/>
+  <text x="60" y="148" text-anchor="middle" fill="#a89070" font-family="monospace" font-size="6">Lv. ?</text>
+</svg>

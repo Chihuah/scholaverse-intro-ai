@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}管理後台 — Scholaverse{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-pixel text-rpg-gold text-sm sm:text-base">ADMIN PANEL</h1>
+    <div class="flex gap-2">
+      <a href="/admin/students" class="pixel-btn-sm">學生列表</a>
+      <a href="/admin/roster" class="pixel-btn-sm">匯入名單</a>
+      <a href="/admin/import" class="pixel-btn-sm">匯入成績</a>
+      <a href="/admin/rules" class="pixel-btn-sm">屬性規則</a>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="pixel-panel p-4 text-center">
+      <p class="text-rpg-text-dim text-xs mb-2">學生總數</p>
+      <p class="font-pixel text-rpg-gold text-lg">{{ total_students }}</p>
+    </div>
+    <div class="pixel-panel p-4 text-center">
+      <p class="text-rpg-text-dim text-xs mb-2">卡牌總數</p>
+      <p class="font-pixel text-rpg-gold text-lg">{{ total_cards }}</p>
+    </div>
+    <div class="pixel-panel p-4 text-center">
+      <p class="text-rpg-text-dim text-xs mb-2">已完成卡牌</p>
+      <p class="font-pixel text-rpg-gold text-lg">{{ completed_cards }}</p>
+    </div>
+  </div>
+
+  <!-- Unit Score Averages -->
+  <div class="pixel-panel p-4">
+    <h2 class="font-pixel text-rpg-gold text-xs mb-4">UNIT AVERAGES</h2>
+    {% if unit_stats %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b-2 border-rpg-brass text-rpg-text-dim text-xs">
+            <th class="text-left py-2 px-2">單元</th>
+            <th class="text-right py-2 px-2">平均測驗</th>
+            <th class="text-right py-2 px-2">平均作業</th>
+            <th class="text-right py-2 px-2">記錄數</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in unit_stats %}
+          <tr class="border-b border-rpg-brass/30">
+            <td class="py-2 px-2">
+              <span class="text-rpg-gold font-medium">{{ u.code }}</span>
+              <span class="text-rpg-text-dim ml-2">{{ u.name }}</span>
+            </td>
+            <td class="text-right py-2 px-2">{{ u.avg_quiz }}</td>
+            <td class="text-right py-2 px-2">{{ u.avg_homework }}</td>
+            <td class="text-right py-2 px-2 text-rpg-text-dim">{{ u.record_count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-rpg-text-dim text-sm">尚無學習記錄。</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Scholaverse - 角色大廳{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="pixel-title text-lg sm:text-xl mb-2">角色大廳 — 全班冒險者</h1>
+  <p class="text-rpg-text-dim text-sm">所有同學的最新角色卡牌</p>
+</div>
+
+{% if hero_cards %}
+<!-- Desktop: Grid / Mobile: Horizontal scroll -->
+<div class="hidden md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-6">
+  {% for hc in hero_cards %}
+  <div class="card-frame card-frame-{{ hc.border_style | default('copper') }} flex flex-col items-center p-3 bg-rpg-bg-deep">
+    <div class="w-full aspect-[3/4] mb-3 overflow-hidden flex items-center justify-center bg-rpg-bg">
+      {% if hc.thumbnail_url or hc.image_url %}
+      <img src="{{ hc.thumbnail_url or hc.image_url }}"
+           alt="{{ hc.student.name if hc.student else '冒險者' }}"
+           class="w-full h-full object-cover" style="image-rendering: pixelated;">
+      {% else %}
+      <img src="/static/images/placeholder/card_placeholder_thumb.svg"
+           alt="卡牌預覽" class="w-16 h-16 opacity-50">
+      {% endif %}
+    </div>
+    <div class="text-center w-full">
+      <p class="text-rpg-text text-sm font-semibold truncate">{{ hc.student.name if hc.student else '冒險者' }}</p>
+      <p class="text-rpg-gold font-mono text-xs font-bold mt-1">Lv.{{ hc.level_number | default('?') }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Mobile: Horizontal scroll -->
+<div class="md:hidden card-scroll flex gap-4 pb-4 mb-6">
+  {% for hc in hero_cards %}
+  <div class="card-frame card-frame-{{ hc.border_style | default('copper') }} flex flex-col items-center p-2 bg-rpg-bg-deep flex-shrink-0 w-36">
+    <div class="w-full aspect-[3/4] mb-2 overflow-hidden flex items-center justify-center bg-rpg-bg">
+      {% if hc.thumbnail_url or hc.image_url %}
+      <img src="{{ hc.thumbnail_url or hc.image_url }}"
+           alt="{{ hc.student.name if hc.student else '冒險者' }}"
+           class="w-full h-full object-cover" style="image-rendering: pixelated;">
+      {% else %}
+      <img src="/static/images/placeholder/card_placeholder_thumb.svg"
+           alt="卡牌預覽" class="w-12 h-12 opacity-50">
+      {% endif %}
+    </div>
+    <div class="text-center w-full">
+      <p class="text-rpg-text text-xs font-semibold truncate">{{ hc.student.name if hc.student else '冒險者' }}</p>
+      <p class="text-rpg-gold font-mono text-[10px] font-bold mt-1">Lv.{{ hc.level_number | default('?') }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<!-- No Cards Yet -->
+<div class="pixel-panel">
+  <div class="text-center py-8">
+    <p class="text-rpg-text-dim text-4xl mb-3">⚔</p>
+    <p class="text-rpg-text-dim text-sm mb-2">角色大廳目前無人進駐。</p>
+    <p class="text-rpg-text-dim text-xs">待同學們生成卡牌後，將在此展示全班最新卡牌。</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Scholaverse - 註冊{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-8">
+  <div class="pixel-panel">
+    <h1 class="pixel-title text-sm sm:text-base mb-6 text-center">冒險者註冊</h1>
+
+    <p class="text-rpg-text-dim text-sm mb-6 text-center">
+      歡迎來到 Scholaverse！請輸入學號完成帳號綁定。
+    </p>
+
+    {% if error %}
+    <div class="mb-4 p-3 border-2 border-red-500 bg-red-500/10 text-red-400 text-sm">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    {% if roster_student %}
+    {# ── Step 2: Nickname entry ── #}
+    <form method="POST" action="/register" class="flex flex-col gap-4">
+      <input type="hidden" name="step" value="2">
+      <input type="hidden" name="student_id" value="{{ roster_student.student_id }}">
+
+      <!-- Email (readonly) -->
+      <div>
+        <label class="block text-xs text-rpg-text-dim mb-1">Email（已認證）</label>
+        <input type="text" value="{{ email or '' }}" readonly
+               class="w-full px-3 py-2 bg-rpg-bg-deep border-2 border-rpg-brass text-rpg-text-dim text-sm cursor-not-allowed">
+      </div>
+
+      <!-- Student ID (readonly) -->
+      <div>
+        <label class="block text-xs text-rpg-text-dim mb-1">學號</label>
+        <input type="text" value="{{ roster_student.student_id }}" readonly
+               class="w-full px-3 py-2 bg-rpg-bg-deep border-2 border-rpg-brass text-rpg-text-dim text-sm cursor-not-allowed">
+      </div>
+
+      <!-- Name (readonly, from roster) -->
+      <div>
+        <label class="block text-xs text-rpg-text-dim mb-1">姓名</label>
+        <input type="text" value="{{ roster_student.name }}" readonly
+               class="w-full px-3 py-2 bg-rpg-bg-deep border-2 border-rpg-brass text-rpg-text-dim text-sm cursor-not-allowed">
+      </div>
+
+      <!-- Nickname -->
+      <div>
+        <label class="block text-xs text-rpg-gold mb-1" for="nickname">角色暱稱</label>
+        <input type="text" id="nickname" name="nickname" required
+               maxlength="18" pattern="[a-zA-Z0-9]+"
+               placeholder="英數字，最多 18 字元"
+               class="w-full px-3 py-2 bg-rpg-bg-deep border-2 border-rpg-gold text-rpg-text text-sm focus:outline-none focus:border-rpg-gold-bright">
+      </div>
+
+      <button type="submit" class="pixel-btn pixel-btn-gold mt-2">
+        開始冒險
+      </button>
+      <div class="text-center mt-3">
+        <a href="/register" class="text-rpg-text-dim text-sm hover:text-rpg-gold hover:underline">返回上一步</a>
+      </div>
+    </form>
+
+    {% else %}
+    {# ── Step 1: Student ID lookup ── #}
+    <form method="POST" action="/register" class="flex flex-col gap-4">
+      <input type="hidden" name="step" value="1">
+
+      <!-- Email (readonly) -->
+      <div>
+        <label class="block text-xs text-rpg-text-dim mb-1">Email（已認證）</label>
+        <input type="text" value="{{ email or '' }}" readonly
+               class="w-full px-3 py-2 bg-rpg-bg-deep border-2 border-rpg-brass text-rpg-text-dim text-sm cursor-not-allowed">
+      </div>
+
+      <!-- Student ID -->
+      <div>
+        <label class="block text-xs text-rpg-gold mb-1" for="student_id">學號</label>
+        <input type="text" id="student_id" name="student_id" required
+               placeholder="例：411234567"
+               class="w-full px-3 py-2 bg-rpg-bg-deep border-2 border-rpg-gold text-rpg-text text-sm focus:outline-none focus:border-rpg-gold-bright">
+      </div>
+
+      <button type="submit" class="pixel-btn pixel-btn-gold mt-2">
+        查詢學號
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

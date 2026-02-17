@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}匯入成績 — Scholaverse{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-pixel text-rpg-gold text-sm sm:text-base">CSV IMPORT</h1>
+    <a href="/admin" class="pixel-btn-sm">返回後台</a>
+  </div>
+
+  <!-- Upload Form -->
+  <div class="pixel-panel p-6">
+    <p class="text-sm mb-4">
+      上傳 CSV 檔案以匯入學習成績記錄。
+    </p>
+    <p class="text-rpg-text-dim text-xs mb-6">
+      CSV 欄位格式：student_id, unit_code, preview_score, quiz_score, homework_score, completion_rate
+    </p>
+
+    <!-- Drop Zone -->
+    <form id="import-form" enctype="multipart/form-data">
+      <div id="drop-zone"
+           class="border-2 border-dashed border-rpg-brass p-8 text-center cursor-pointer
+                  hover:border-rpg-gold transition-colors">
+        <p class="font-pixel text-rpg-gold text-xs mb-2">DROP CSV HERE</p>
+        <p class="text-rpg-text-dim text-sm mb-4">或點擊選擇檔案</p>
+        <input type="file" id="csv-file" name="file" accept=".csv"
+               class="hidden">
+        <p id="file-name" class="text-rpg-gold text-sm hidden"></p>
+      </div>
+
+      <button type="submit" id="upload-btn"
+              class="pixel-btn w-full mt-4 disabled:opacity-50"
+              disabled>
+        上傳並匯入
+      </button>
+    </form>
+
+    <!-- Results -->
+    <div id="import-result" class="hidden mt-6 pixel-panel p-4 bg-rpg-bg">
+      <h3 class="font-pixel text-rpg-gold text-xs mb-3">RESULT</h3>
+      <div id="result-content"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+(function() {
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('csv-file');
+  const fileName = document.getElementById('file-name');
+  const uploadBtn = document.getElementById('upload-btn');
+  const form = document.getElementById('import-form');
+  const resultDiv = document.getElementById('import-result');
+  const resultContent = document.getElementById('result-content');
+
+  // Click to select file
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  // Drag & drop
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-rpg-gold');
+  });
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('border-rpg-gold');
+  });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-rpg-gold');
+    if (e.dataTransfer.files.length) {
+      fileInput.files = e.dataTransfer.files;
+      onFileSelected();
+    }
+  });
+
+  fileInput.addEventListener('change', onFileSelected);
+
+  function onFileSelected() {
+    if (fileInput.files.length) {
+      fileName.textContent = fileInput.files[0].name;
+      fileName.classList.remove('hidden');
+      uploadBtn.disabled = false;
+    }
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!fileInput.files.length) return;
+
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = '匯入中...';
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    try {
+      const resp = await fetch('/api/admin/import', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await resp.json();
+
+      resultDiv.classList.remove('hidden');
+      if (resp.ok) {
+        let html = `<p class="text-sm mb-2">新增 <span class="text-rpg-gold">${data.created}</span> 筆，更新 <span class="text-rpg-gold">${data.updated}</span> 筆，共 <span class="text-rpg-gold">${data.total}</span> 筆。</p>`;
+        if (data.errors && data.errors.length > 0) {
+          html += `<p class="text-red-400 text-xs mt-2">錯誤：</p><ul class="text-red-400 text-xs list-disc list-inside">`;
+          data.errors.forEach(err => { html += `<li>${err}</li>`; });
+          html += `</ul>`;
+        }
+        resultContent.innerHTML = html;
+      } else {
+        resultContent.innerHTML = `<p class="text-red-400 text-sm">${data.detail || '匯入失敗'}</p>`;
+      }
+    } catch (err) {
+      resultDiv.classList.remove('hidden');
+      resultContent.innerHTML = `<p class="text-red-400 text-sm">網路錯誤：${err.message}</p>`;
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = '上傳並匯入';
+    }
+  });
+})();
+</script>
+{% endblock %}

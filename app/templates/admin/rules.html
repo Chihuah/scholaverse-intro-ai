@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}屬性規則設定 — Scholaverse{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="font-pixel text-rpg-gold text-sm sm:text-base">ATTRIBUTE RULES</h1>
+    <a href="/admin" class="pixel-btn-sm">返回後台</a>
+  </div>
+
+  {% for unit_code, attr_types in grouped.items() %}
+  <div class="pixel-panel p-4 mb-6">
+    <h2 class="font-pixel text-rpg-gold text-xs mb-4">
+      {{ unit_code | upper }} — {{ unit_names.get(unit_code, unit_code) }}
+    </h2>
+
+    {% for attr_type, rules in attr_types.items() %}
+    <div class="mb-6 last:mb-0">
+      <!-- Collapsible header -->
+      <button
+        type="button"
+        class="w-full flex items-center justify-between text-left px-3 py-2 border-2 border-rpg-brass bg-rpg-bg-deep hover:bg-rpg-panel-alt/30 transition-colors"
+        onclick="toggleSection(this)"
+      >
+        <span class="text-rpg-text text-sm font-medium">
+          {{ attr_type }}
+          <span class="text-rpg-text-dim text-xs ml-2">({{ rules | length }} tiers)</span>
+        </span>
+        <svg class="section-arrow w-4 h-4 text-rpg-gold transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="square" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </button>
+
+      <!-- Collapsible content -->
+      <div class="section-content hidden border-x-2 border-b-2 border-rpg-brass">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b-2 border-rpg-brass text-rpg-text-dim text-xs">
+                <th class="text-left py-2 px-3 w-16">Tier</th>
+                <th class="text-left py-2 px-3">Options</th>
+                <th class="text-left py-2 px-3">Labels</th>
+                <th class="text-right py-2 px-3 w-20"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rule in rules %}
+              <tr class="border-b border-rpg-brass/30" id="rule-row-{{ rule.id }}">
+                <td class="py-2 px-3">
+                  <span class="font-pixel text-xs
+                    {% if rule.tier == 'S' %}text-rpg-gold-bright
+                    {% elif rule.tier == 'A' %}text-rpg-gold
+                    {% elif rule.tier == 'B' %}text-rpg-silver
+                    {% elif rule.tier == 'C' %}text-rpg-copper
+                    {% else %}text-rpg-text-dim{% endif %}
+                  ">{{ rule.tier }}</span>
+                </td>
+                <td class="py-2 px-3 text-xs" id="rule-options-{{ rule.id }}">
+                  {{ rule.options | join(', ') }}
+                </td>
+                <td class="py-2 px-3 text-xs text-rpg-text-dim" id="rule-labels-{{ rule.id }}">
+                  {{ rule.labels.values() | join(', ') }}
+                </td>
+                <td class="py-2 px-3 text-right">
+                  <button
+                    type="button"
+                    class="pixel-btn-sm text-xs"
+                    data-rule-id="{{ rule.id }}"
+                    data-options='{{ rule.options | tojson | e }}'
+                    data-labels='{{ rule.labels | tojson | e }}'
+                    onclick="openEditFromBtn(this)"
+                  >編輯</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  {% if not grouped %}
+  <div class="pixel-panel p-8 text-center">
+    <p class="text-rpg-text-dim text-sm">尚無屬性規則資料。請先執行 seed script。</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Edit Modal -->
+<div id="edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60">
+  <div class="pixel-panel p-6 w-full max-w-lg mx-4">
+    <h3 class="font-pixel text-rpg-gold text-xs mb-4">編輯規則</h3>
+    <input type="hidden" id="edit-rule-id">
+
+    <div class="mb-4">
+      <label class="block text-rpg-text-dim text-xs mb-1">Options（每行一個 key）</label>
+      <textarea id="edit-options"
+        class="w-full bg-rpg-bg-deep border-2 border-rpg-brass text-rpg-text text-sm px-3 py-2 font-mono
+               focus:border-rpg-gold focus:outline-none"
+        rows="6"></textarea>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-rpg-text-dim text-xs mb-1">Labels（每行格式：key:中文標籤）</label>
+      <textarea id="edit-labels"
+        class="w-full bg-rpg-bg-deep border-2 border-rpg-brass text-rpg-text text-sm px-3 py-2 font-mono
+               focus:border-rpg-gold focus:outline-none"
+        rows="6"></textarea>
+    </div>
+
+    <div class="flex justify-end gap-2">
+      <button type="button" class="pixel-btn-sm" onclick="closeEditModal()">取消</button>
+      <button type="button" class="pixel-btn-sm" style="background: #2d5a1a;" onclick="saveRule()">儲存</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+function toggleSection(btn) {
+  const content = btn.nextElementSibling;
+  const arrow = btn.querySelector('.section-arrow');
+  content.classList.toggle('hidden');
+  arrow.classList.toggle('rotate-180');
+}
+
+function openEditFromBtn(btn) {
+  const ruleId = btn.dataset.ruleId;
+  const options = JSON.parse(btn.dataset.options);
+  const labels = JSON.parse(btn.dataset.labels);
+  openEditForm(ruleId, options, labels);
+}
+
+function openEditForm(ruleId, options, labels) {
+  document.getElementById('edit-rule-id').value = ruleId;
+  document.getElementById('edit-options').value = options.join('\n');
+
+  const labelLines = [];
+  for (const [key, val] of Object.entries(labels)) {
+    labelLines.push(key + ':' + val);
+  }
+  document.getElementById('edit-labels').value = labelLines.join('\n');
+
+  const modal = document.getElementById('edit-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('edit-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+async function saveRule() {
+  const ruleId = document.getElementById('edit-rule-id').value;
+  const optionsText = document.getElementById('edit-options').value.trim();
+  const labelsText = document.getElementById('edit-labels').value.trim();
+
+  const options = optionsText.split('\n').map(s => s.trim()).filter(Boolean);
+  const labels = {};
+  for (const line of labelsText.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const idx = trimmed.indexOf(':');
+    if (idx === -1) {
+      showToast('Labels 格式錯誤：' + trimmed, 'error');
+      return;
+    }
+    labels[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
+  }
+
+  try {
+    const resp = await fetch('/api/admin/rules/' + ruleId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ options, labels }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      showToast(err.detail || '儲存失敗', 'error');
+      return;
+    }
+
+    const data = await resp.json();
+
+    // Update the row in-place
+    const optionsCell = document.getElementById('rule-options-' + ruleId);
+    const labelsCell = document.getElementById('rule-labels-' + ruleId);
+    if (optionsCell) optionsCell.textContent = data.options.join(', ');
+    if (labelsCell) labelsCell.textContent = Object.values(data.labels).join(', ');
+
+    showToast('規則已更新', 'success');
+    closeEditModal();
+  } catch (e) {
+    showToast('網路錯誤', 'error');
+  }
+}
+
+// Close modal on backdrop click
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+</script>
+{% endblock %}

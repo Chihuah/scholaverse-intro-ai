@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="420" viewBox="0 0 300 420">
+  <!-- Card background -->
+  <rect width="300" height="420" rx="8" fill="#1a1a2e"/>
+  <!-- Gold border -->
+  <rect x="4" y="4" width="292" height="412" rx="6" fill="none" stroke="#d4a847" stroke-width="3"/>
+  <!-- Inner border -->
+  <rect x="10" y="10" width="280" height="400" rx="4" fill="none" stroke="#8b6914" stroke-width="1"/>
+  <!-- Image area -->
+  <rect x="20" y="50" width="260" height="260" rx="2" fill="#2d3a1a" stroke="#8b6914" stroke-width="1"/>
+  <!-- Placeholder icon (sword) -->
+  <g transform="translate(150,180)" fill="#d4a847" opacity="0.5">
+    <rect x="-4" y="-60" width="8" height="80" rx="1"/>
+    <rect x="-20" y="10" width="40" height="8" rx="1"/>
+    <polygon points="-4,-60 4,-60 0,-70"/>
+  </g>
+  <!-- Title area -->
+  <rect x="20" y="15" width="260" height="28" rx="2" fill="#2d3a1a" opacity="0.7"/>
+  <text x="150" y="35" text-anchor="middle" fill="#d4a847" font-family="monospace" font-size="11" font-weight="bold">PLACEHOLDER CARD</text>
+  <!-- Stats area -->
+  <rect x="20" y="320" width="260" height="80" rx="2" fill="#2d3a1a" stroke="#8b6914" stroke-width="1"/>
+  <text x="150" y="350" text-anchor="middle" fill="#e8d5b0" font-family="monospace" font-size="10">Awaiting Generation...</text>
+  <text x="150" y="375" text-anchor="middle" fill="#a89070" font-family="monospace" font-size="9">Lv. ? | ??? Class</text>
+  <!-- Corner decorations -->
+  <rect x="6" y="6" width="12" height="12" fill="#d4a847" opacity="0.3"/>
+  <rect x="282" y="6" width="12" height="12" fill="#d4a847" opacity="0.3"/>
+  <rect x="6" y="402" width="12" height="12" fill="#d4a847" opacity="0.3"/>
+  <rect x="282" y="402" width="12" height="12" fill="#d4a847" opacity="0.3"/>
+</svg>

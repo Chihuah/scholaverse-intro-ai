@@ -1,0 +1,25 @@
+Pixel UI Assets - Kenney.nl
+===========================
+
+Assets in this directory are sourced from:
+
+1. Kenney Pixel UI Pack
+   URL: https://kenney.nl/assets/pixel-ui-pack
+   License: Creative Commons Zero (CC0) — Public Domain
+   No attribution required.
+
+2. Kenney UI Pack: RPG Expansion
+   URL: https://kenney.nl/assets/ui-pack-rpg-expansion
+   License: Creative Commons Zero (CC0) — Public Domain
+   No attribution required.
+
+CC0 License Summary:
+The person who associated a work with this deed has dedicated the work to the
+public domain by waiving all of his or her rights to the work worldwide under
+copyright law, including all related and neighboring rights, to the extent
+allowed by law.
+
+Full license text: https://creativecommons.org/publicdomain/zero/1.0/
+
+Credit (optional but appreciated):
+  Kenney (www.kenney.nl) — Free Game Assets

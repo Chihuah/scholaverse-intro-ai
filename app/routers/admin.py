@@ -1,0 +1,728 @@
+"""Admin dashboard routes — HTML pages and API endpoints."""
+
+import csv
+import io
+import json
+import logging
+import re
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, UploadFile, File
+from sqlalchemy import case, delete, select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db
+from app.dependencies import require_teacher
+from app.models.attribute_rule import AttributeRule
+from app.models.card import Card
+from app.models.card_config import CardConfig
+from app.models.learning_record import LearningRecord
+from app.models.student import Student
+from app.models.token_transaction import TokenTransaction
+from app.models.unit import Unit
+from app.templating import templates
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(tags=["admin"])
+
+
+# ─── HTML Pages ───────────────────────────────────────────────────────
+
+
+@router.get("/admin")
+async def admin_dashboard(
+    request: Request,
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin dashboard overview."""
+    # Total students
+    total_students = (
+        await db.execute(select(func.count(Student.id)))
+    ).scalar() or 0
+
+    # Total cards
+    total_cards = (
+        await db.execute(select(func.count(Card.id)))
+    ).scalar() or 0
+
+    # Completed cards
+    completed_cards = (
+        await db.execute(
+            select(func.count(Card.id)).where(Card.status == "completed")
+        )
+    ).scalar() or 0
+
+    # Average scores per unit
+    units_result = await db.execute(select(Unit).order_by(Unit.sort_order))
+    units = units_result.scalars().all()
+
+    unit_stats = []
+    for unit in units:
+        avg_quiz = (
+            await db.execute(
+                select(func.avg(LearningRecord.quiz_score)).where(
+                    LearningRecord.unit_id == unit.id
+                )
+            )
+        ).scalar()
+        avg_hw = (
+            await db.execute(
+                select(func.avg(LearningRecord.homework_score)).where(
+                    LearningRecord.unit_id == unit.id
+                )
+            )
+        ).scalar()
+        record_count = (
+            await db.execute(
+                select(func.count(LearningRecord.id)).where(
+                    LearningRecord.unit_id == unit.id
+                )
+            )
+        ).scalar() or 0
+
+        unit_stats.append({
+            "code": unit.code,
+            "name": unit.name,
+            "avg_quiz": round(avg_quiz, 1) if avg_quiz else 0,
+            "avg_homework": round(avg_hw, 1) if avg_hw else 0,
+            "record_count": record_count,
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "admin/dashboard.html",
+        {
+            "user": user,
+            "total_students": total_students,
+            "total_cards": total_cards,
+            "completed_cards": completed_cards,
+            "unit_stats": unit_stats,
+        },
+    )
+
+
+@router.get("/admin/students")
+async def admin_students(
+    request: Request,
+    q: str = "",
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Student list with optional search."""
+    role_order = case(
+        (Student.role == "admin", 0),
+        (Student.role == "teacher", 1),
+        else_=2,
+    )
+    query = select(Student).order_by(role_order, Student.student_id.asc())
+    if q:
+        query = query.where(
+            Student.name.contains(q) | Student.student_id.contains(q)
+        )
+    result = await db.execute(query)
+    students = result.scalars().all()
+
+    # Get card counts per student
+    student_data = []
+    for s in students:
+        card_count = (
+            await db.execute(
+                select(func.count(Card.id)).where(Card.student_id == s.id)
+            )
+        ).scalar() or 0
+        student_data.append({"student": s, "card_count": card_count})
+
+    return templates.TemplateResponse(
+        request,
+        "admin/students.html",
+        {"user": user, "student_data": student_data, "search_query": q},
+    )
+
+
+@router.get("/admin/students/{student_pk}")
+async def admin_student_detail(
+    request: Request,
+    student_pk: int,
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Single student detail page."""
+    result = await db.execute(select(Student).where(Student.id == student_pk))
+    student = result.scalar_one_or_none()
+    if student is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    # All units for editable records table
+    units_result = await db.execute(select(Unit).order_by(Unit.sort_order))
+    units = units_result.scalars().all()
+
+    # Learning records indexed by unit_id
+    lr_result = await db.execute(
+        select(LearningRecord).where(LearningRecord.student_id == student.id)
+    )
+    records_by_unit = {r.unit_id: r for r in lr_result.scalars().all()}
+
+    # Cards
+    cards_result = await db.execute(
+        select(Card)
+        .where(Card.student_id == student.id)
+        .order_by(Card.created_at.desc())
+    )
+    cards = cards_result.scalars().all()
+
+    return templates.TemplateResponse(
+        request,
+        "admin/student_detail.html",
+        {
+            "user": user,
+            "student": student,
+            "units": units,
+            "records_by_unit": records_by_unit,
+            "cards": cards,
+        },
+    )
+
+
+@router.get("/admin/import")
+async def admin_import_page(
+    request: Request,
+    user: Student = Depends(require_teacher),
+):
+    """CSV import page."""
+    return templates.TemplateResponse(
+        request,
+        "admin/import.html",
+        {"user": user},
+    )
+
+
+@router.get("/admin/roster")
+async def admin_roster_page(
+    request: Request,
+    user: Student = Depends(require_teacher),
+):
+    """Roster CSV import page."""
+    return templates.TemplateResponse(
+        request,
+        "admin/roster.html",
+        {"user": user},
+    )
+
+
+# ─── API Endpoints ────────────────────────────────────────────────────
+
+
+@router.get("/api/admin/dashboard")
+async def api_admin_dashboard(
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return JSON statistics for admin dashboard."""
+    total_students = (
+        await db.execute(select(func.count(Student.id)))
+    ).scalar() or 0
+    total_cards = (
+        await db.execute(select(func.count(Card.id)))
+    ).scalar() or 0
+    completed_cards = (
+        await db.execute(
+            select(func.count(Card.id)).where(Card.status == "completed")
+        )
+    ).scalar() or 0
+
+    return {
+        "total_students": total_students,
+        "total_cards": total_cards,
+        "completed_cards": completed_cards,
+    }
+
+
+@router.put("/api/admin/students/{student_pk}")
+async def api_admin_update_student(
+    student_pk: int,
+    payload: dict = Body(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update student info."""
+    result = await db.execute(select(Student).where(Student.id == student_pk))
+    student = result.scalar_one_or_none()
+    if student is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    if "name" in payload and payload["name"]:
+        student.name = str(payload["name"]).strip()
+
+    if "nickname" in payload:
+        nick = payload["nickname"]
+        if nick is not None and nick != "":
+            nick = str(nick).strip()
+            if not re.match(r'^[a-zA-Z0-9]{1,18}$', nick):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Nickname must be alphanumeric, max 18 characters",
+                )
+            student.nickname = nick
+        else:
+            student.nickname = None
+
+    if "student_id" in payload and payload["student_id"]:
+        new_sid = str(payload["student_id"]).strip()
+        if new_sid != student.student_id:
+            existing = await db.execute(
+                select(Student).where(
+                    Student.student_id == new_sid, Student.id != student_pk
+                )
+            )
+            if existing.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=400, detail="Student ID already in use"
+                )
+            student.student_id = new_sid
+
+    if "role" in payload:
+        if payload["role"] not in ("student", "teacher", "admin"):
+            raise HTTPException(status_code=400, detail="Invalid role")
+        student.role = payload["role"]
+
+    if "tokens" in payload:
+        student.tokens = int(payload["tokens"])
+
+    student.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(student)
+
+    return {
+        "id": student.id,
+        "email": student.email,
+        "name": student.name,
+        "nickname": student.nickname,
+        "student_id": student.student_id,
+        "role": student.role,
+        "tokens": student.tokens,
+    }
+
+
+@router.put("/api/admin/students/{student_pk}/records/{unit_id}")
+async def api_admin_update_record(
+    student_pk: int,
+    unit_id: int,
+    payload: dict = Body(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update or create a learning record for a student+unit."""
+    # Verify student exists
+    student = (
+        await db.execute(select(Student).where(Student.id == student_pk))
+    ).scalar_one_or_none()
+    if student is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    # Verify unit exists
+    unit = (
+        await db.execute(select(Unit).where(Unit.id == unit_id))
+    ).scalar_one_or_none()
+    if unit is None:
+        raise HTTPException(status_code=404, detail="Unit not found")
+
+    # Find or create record
+    existing = (
+        await db.execute(
+            select(LearningRecord).where(
+                LearningRecord.student_id == student_pk,
+                LearningRecord.unit_id == unit_id,
+            )
+        )
+    ).scalar_one_or_none()
+
+    if existing is None:
+        existing = LearningRecord(student_id=student_pk, unit_id=unit_id)
+        db.add(existing)
+
+    for field in ("preview_score", "quiz_score", "homework_score", "completion_rate"):
+        if field in payload:
+            val = payload[field]
+            setattr(existing, field, float(val) if val is not None and val != "" else None)
+
+    existing.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(existing)
+
+    return {
+        "id": existing.id,
+        "student_id": existing.student_id,
+        "unit_id": existing.unit_id,
+        "preview_score": existing.preview_score,
+        "quiz_score": existing.quiz_score,
+        "homework_score": existing.homework_score,
+        "completion_rate": existing.completion_rate,
+    }
+
+
+@router.post("/api/admin/students/{student_pk}/unbind")
+async def api_admin_unbind_student(
+    student_pk: int,
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Unbind (delete) a student and all related records."""
+    student = (
+        await db.execute(select(Student).where(Student.id == student_pk))
+    ).scalar_one_or_none()
+    if student is None:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    student_name = student.name
+
+    # Reset email to placeholder (preserves roster entry)
+    student.email = f"__unbound__{student.student_id}@placeholder"
+    student.nickname = None
+    student.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"status": "ok", "message": f"已解除 {student_name} 的 Email 綁定"}
+
+
+@router.post("/api/admin/import")
+async def api_admin_import(
+    file: UploadFile = File(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Import learning records from CSV.
+
+    Expected CSV columns:
+    student_id, unit_code, preview_score, quiz_score, homework_score, completion_rate
+    """
+    if not file.filename or not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Please upload a CSV file")
+
+    content = await file.read()
+    text = content.decode("utf-8-sig")  # handle BOM
+    reader = csv.DictReader(io.StringIO(text))
+
+    created = 0
+    updated = 0
+    errors = []
+
+    for row_num, row in enumerate(reader, start=2):  # row 1 = header
+        try:
+            sid = row.get("student_id", "").strip()
+            unit_code = row.get("unit_code", "").strip()
+
+            if not sid or not unit_code:
+                errors.append(f"Row {row_num}: missing student_id or unit_code")
+                continue
+
+            # Find student by student_id field (not PK)
+            student_result = await db.execute(
+                select(Student).where(Student.student_id == sid)
+            )
+            student = student_result.scalar_one_or_none()
+            if student is None:
+                errors.append(f"Row {row_num}: student '{sid}' not found")
+                continue
+
+            # Find unit
+            unit_result = await db.execute(
+                select(Unit).where(Unit.code == unit_code)
+            )
+            unit = unit_result.scalar_one_or_none()
+            if unit is None:
+                errors.append(f"Row {row_num}: unit '{unit_code}' not found")
+                continue
+
+            # Parse scores
+            preview = _parse_float(row.get("preview_score"))
+            quiz = _parse_float(row.get("quiz_score"))
+            homework = _parse_float(row.get("homework_score"))
+            completion = _parse_float(row.get("completion_rate"))
+
+            # Upsert learning record
+            existing_result = await db.execute(
+                select(LearningRecord).where(
+                    LearningRecord.student_id == student.id,
+                    LearningRecord.unit_id == unit.id,
+                )
+            )
+            existing = existing_result.scalar_one_or_none()
+
+            if existing:
+                if preview is not None:
+                    existing.preview_score = preview
+                if quiz is not None:
+                    existing.quiz_score = quiz
+                if homework is not None:
+                    existing.homework_score = homework
+                if completion is not None:
+                    existing.completion_rate = completion
+                existing.updated_at = datetime.now(timezone.utc)
+                updated += 1
+            else:
+                lr = LearningRecord(
+                    student_id=student.id,
+                    unit_id=unit.id,
+                    preview_score=preview,
+                    quiz_score=quiz,
+                    homework_score=homework,
+                    completion_rate=completion,
+                )
+                db.add(lr)
+                created += 1
+
+        except Exception as e:
+            errors.append(f"Row {row_num}: {e}")
+
+    await db.commit()
+
+    return {
+        "created": created,
+        "updated": updated,
+        "total": created + updated,
+        "errors": errors[:20],  # cap error list
+    }
+
+
+@router.post("/api/admin/roster")
+async def api_admin_roster(
+    file: UploadFile = File(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Import student roster from CSV.
+
+    Expected CSV columns: id (學號), name (姓名)
+    Creates unbound roster students with placeholder emails.
+    """
+    if not file.filename or not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Please upload a CSV file")
+
+    content = await file.read()
+    text = content.decode("utf-8-sig")  # handle BOM
+    reader = csv.DictReader(io.StringIO(text))
+
+    created = 0
+    updated = 0
+    errors = []
+
+    for row_num, row in enumerate(reader, start=2):  # row 1 = header
+        try:
+            sid = row.get("id", "").strip()
+            name = row.get("name", "").strip()
+
+            if not sid or not name:
+                errors.append(f"Row {row_num}: missing id or name")
+                continue
+
+            # Check if student already exists
+            result = await db.execute(
+                select(Student).where(Student.student_id == sid)
+            )
+            existing = result.scalar_one_or_none()
+
+            if existing:
+                existing.name = name
+                existing.updated_at = datetime.now(timezone.utc)
+                updated += 1
+            else:
+                placeholder_email = f"__unbound__{sid}@placeholder"
+                student = Student(
+                    student_id=sid,
+                    name=name,
+                    email=placeholder_email,
+                    role="student",
+                    tokens=0,
+                )
+                db.add(student)
+                created += 1
+
+        except Exception as e:
+            errors.append(f"Row {row_num}: {e}")
+
+    await db.commit()
+
+    return {
+        "created": created,
+        "updated": updated,
+        "total": created + updated,
+        "errors": errors[:20],
+    }
+
+
+def _parse_float(val: str | None) -> float | None:
+    """Parse a CSV cell to float, returning None for empty/invalid."""
+    if val is None:
+        return None
+    val = val.strip()
+    if not val:
+        return None
+    try:
+        return float(val)
+    except ValueError:
+        return None
+
+
+# ─── Attribute Rules Management ──────────────────────────────────────
+
+UNIT_NAMES = {
+    "unit_1": "先備知識",
+    "unit_2": "MLP",
+    "unit_3": "CNN",
+    "unit_4": "RNN",
+    "unit_5": "進階技術",
+    "unit_6": "自主學習",
+}
+
+
+@router.get("/admin/rules")
+async def admin_rules(
+    request: Request,
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Attribute rules management page."""
+    result = await db.execute(
+        select(AttributeRule).order_by(
+            AttributeRule.unit_code, AttributeRule.sort_order, AttributeRule.tier
+        )
+    )
+    rules = result.scalars().all()
+
+    # Group by unit_code → attribute_type
+    from collections import OrderedDict
+    grouped: dict[str, dict[str, list]] = OrderedDict()
+    for rule in rules:
+        if rule.unit_code not in grouped:
+            grouped[rule.unit_code] = OrderedDict()
+        if rule.attribute_type not in grouped[rule.unit_code]:
+            grouped[rule.unit_code][rule.attribute_type] = []
+        grouped[rule.unit_code][rule.attribute_type].append({
+            "id": rule.id,
+            "tier": rule.tier,
+            "options": json.loads(rule.options),
+            "labels": json.loads(rule.labels),
+            "sort_order": rule.sort_order,
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "admin/rules.html",
+        {
+            "user": user,
+            "grouped": grouped,
+            "unit_names": UNIT_NAMES,
+        },
+    )
+
+
+@router.put("/api/admin/rules/{rule_id}")
+async def api_admin_update_rule(
+    rule_id: int,
+    payload: dict = Body(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a single attribute rule's options and labels."""
+    result = await db.execute(
+        select(AttributeRule).where(AttributeRule.id == rule_id)
+    )
+    rule = result.scalar_one_or_none()
+    if rule is None:
+        raise HTTPException(status_code=404, detail="Rule not found")
+
+    if "options" in payload:
+        if not isinstance(payload["options"], list):
+            raise HTTPException(status_code=400, detail="options must be a JSON array")
+        rule.options = json.dumps(payload["options"], ensure_ascii=False)
+
+    if "labels" in payload:
+        if not isinstance(payload["labels"], dict):
+            raise HTTPException(status_code=400, detail="labels must be a JSON object")
+        rule.labels = json.dumps(payload["labels"], ensure_ascii=False)
+
+    rule.updated_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(rule)
+
+    return {
+        "id": rule.id,
+        "unit_code": rule.unit_code,
+        "attribute_type": rule.attribute_type,
+        "tier": rule.tier,
+        "options": json.loads(rule.options),
+        "labels": json.loads(rule.labels),
+    }
+
+
+@router.post("/api/admin/rules")
+async def api_admin_create_rule(
+    payload: dict = Body(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a new attribute rule."""
+    required = ["unit_code", "attribute_type", "tier", "options", "labels"]
+    for field in required:
+        if field not in payload:
+            raise HTTPException(status_code=400, detail=f"Missing field: {field}")
+
+    if not isinstance(payload["options"], list):
+        raise HTTPException(status_code=400, detail="options must be a JSON array")
+    if not isinstance(payload["labels"], dict):
+        raise HTTPException(status_code=400, detail="labels must be a JSON object")
+
+    # Check duplicates
+    existing = await db.execute(
+        select(AttributeRule).where(
+            AttributeRule.unit_code == payload["unit_code"],
+            AttributeRule.attribute_type == payload["attribute_type"],
+            AttributeRule.tier == payload["tier"],
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=400,
+            detail="Rule already exists for this unit_code + attribute_type + tier",
+        )
+
+    rule = AttributeRule(
+        unit_code=payload["unit_code"],
+        attribute_type=payload["attribute_type"],
+        tier=payload["tier"],
+        options=json.dumps(payload["options"], ensure_ascii=False),
+        labels=json.dumps(payload["labels"], ensure_ascii=False),
+        sort_order=payload.get("sort_order", 0),
+    )
+    db.add(rule)
+    await db.commit()
+    await db.refresh(rule)
+
+    return {
+        "id": rule.id,
+        "unit_code": rule.unit_code,
+        "attribute_type": rule.attribute_type,
+        "tier": rule.tier,
+        "options": json.loads(rule.options),
+        "labels": json.loads(rule.labels),
+    }
+
+
+@router.delete("/api/admin/rules/{rule_id}")
+async def api_admin_delete_rule(
+    rule_id: int,
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete an attribute rule."""
+    result = await db.execute(
+        select(AttributeRule).where(AttributeRule.id == rule_id)
+    )
+    rule = result.scalar_one_or_none()
+    if rule is None:
+        raise HTTPException(status_code=404, detail="Rule not found")
+
+    await db.delete(rule)
+    await db.commit()
+    return {"status": "ok"}
