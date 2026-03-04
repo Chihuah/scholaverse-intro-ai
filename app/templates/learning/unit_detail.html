@@ -90,15 +90,30 @@
 
   <!-- Attribute selection (hidden for guests) -->
   {% if available and user %}
+  {% set attr_type_labels = {
+    'race': '種族',
+    'gender': '性別',
+    'class': '職業',
+    'body': '體型',
+    'equipment': '服飾裝備',
+    'weapon_quality': '武器品質',
+    'weapon_type': '武器類型',
+    'background': '背景場景',
+    'expression': '表情',
+    'pose': '姿勢',
+  } %}
   <div class="rounded px-4 py-4 bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)]">
     <p class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)] mb-3">
       選擇角色屬性 — {{ attr_label }}
     </p>
-    {% for attr_type, options in available.items() %}
+    {% for attr_type, attr_data in available.items() %}
     <div class="flex flex-col gap-2 mb-4">
-      <span class="font-tc text-[10px] text-[var(--rpg-gold)]">{{ attr_type }}</span>
+      <span class="font-tc text-[10px] text-[var(--rpg-gold)]">
+        {{ attr_type_labels.get(attr_type, attr_type) }}
+      </span>
       <div class="flex flex-wrap gap-2" id="attr-group-{{ attr_type | replace(' ', '-') }}">
-        {% for option in options %}
+        {% for option in attr_data.options %}
+        {% set display_label = attr_data.labels.get(option, option) %}
         <button class="attr-btn font-tc text-xs rounded px-3 py-1.5 border transition-colors
                        {% if chosen_attrs.get(attr_type) == option %}
                          bg-[var(--rpg-gold-dark)] border-[var(--rpg-gold)] text-[var(--rpg-gold-bright)] selected
@@ -109,11 +124,12 @@
                 data-unit="{{ unit.code }}"
                 data-attr-type="{{ attr_type }}"
                 data-attr-value="{{ option }}"
+                data-attr-label="{{ display_label }}"
                 onclick="selectAttr(this)">
           {% if chosen_attrs.get(attr_type) == option %}
           <i data-lucide="check" class="w-3 h-3 inline mr-1"></i>
           {% endif %}
-          {{ option }}
+          {{ display_label }}
         </button>
         {% endfor %}
       </div>
@@ -138,6 +154,7 @@ async function selectAttr(btn) {
   const unitCode  = btn.dataset.unit;
   const attrType  = btn.dataset.attrType;
   const attrValue = btn.dataset.attrValue;
+  const attrLabel = btn.dataset.attrLabel || attrValue;
   const resultEl  = document.getElementById('attr-result');
 
   btn.disabled = true;
@@ -164,7 +181,6 @@ async function selectAttr(btn) {
         b.classList.add(
           'bg-[var(--rpg-bg-panel)]', 'border-[var(--rpg-gold-dark)]', 'text-[var(--rpg-text-primary)]'
         );
-        // Remove inline check icon
         const icon = b.querySelector('[data-lucide="check"]');
         if (icon) icon.remove();
       });
@@ -176,9 +192,8 @@ async function selectAttr(btn) {
       );
     }
 
-    const tokenMsg = data.tokens_spent > 0 ? '（扣除 ' + data.tokens_spent + ' 代幣）' : '';
     resultEl.className = 'font-tc text-xs mt-2 text-[var(--rpg-success)]';
-    resultEl.textContent = '✓ 已選擇：' + attrValue + ' ' + tokenMsg;
+    resultEl.textContent = '✓ 已儲存：' + attrLabel;
   } catch (e) {
     resultEl.className = 'font-tc text-xs mt-2 text-[var(--rpg-danger)]';
     resultEl.textContent = '網路錯誤，請稍後再試';

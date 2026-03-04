@@ -1,7 +1,7 @@
 """HTML page routes - serves Jinja2 templates."""
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -252,6 +252,19 @@ async def progress(
             "available": available,
         })
 
+    # Check if user already has non-failed cards (affects generation cost)
+    has_cards = False
+    if user:
+        card_check = await db.execute(
+            select(Card)
+            .where(
+                Card.student_id == user.id,
+                Card.status.in_(["pending", "generating", "completed"]),
+            )
+            .limit(1)
+        )
+        has_cards = card_check.scalar_one_or_none() is not None
+
     return templates.TemplateResponse(
         request,
         "learning/progress.html",
@@ -259,6 +272,8 @@ async def progress(
             "user": user,
             "unit_data": unit_data,
             "guest_mode": settings.GUEST_MODE,
+            "has_cards": has_cards,
+            "regen_cost": 10,
         },
     )
 
@@ -360,6 +375,16 @@ async def unit_detail(
             "guest_mode": settings.GUEST_MODE,
         },
     )
+
+
+@router.get("/logout")
+async def logout():
+    """Logout by redirecting to Cloudflare Access logout endpoint.
+
+    This clears the CF_Authorization cookie, forcing re-authentication
+    on the next visit. Works transparently with Cloudflare Zero Trust.
+    """
+    return RedirectResponse(url="/cdn-cgi/access/logout", status_code=302)
 
 
 @router.get("/register", response_class=HTMLResponse)

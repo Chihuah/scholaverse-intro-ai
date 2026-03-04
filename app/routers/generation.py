@@ -17,8 +17,12 @@ from app.models.card import Card
 from app.models.card_config import CardConfig
 from app.models.learning_record import LearningRecord
 from app.models.student import Student
+from app.models.token_transaction import TokenTransaction
 from app.models.unit import Unit
 from app.services import get_ai_worker_service
+
+# Tokens deducted when regenerating a card (first generation is free)
+CARD_REGEN_COST = 10
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +39,24 @@ async def generate_card(
     Gathers the student's current card configs and learning records,
     creates a Card row with status='pending', then submits to ai-worker.
     """
+    # 0. Check if this is a regeneration (user already has non-failed cards)
+    existing_result = await db.execute(
+        select(Card)
+        .where(
+            Card.student_id == user.id,
+            Card.status.in_(["pending", "generating", "completed"]),
+        )
+        .limit(1)
+    )
+    is_regen = existing_result.scalar_one_or_none() is not None
+    token_cost = CARD_REGEN_COST if is_regen else 0
+
+    if is_regen and user.tokens < token_cost:
+        raise HTTPException(
+            status_code=400,
+            detail=f"代幣不足（重新生成需要 {token_cost} 代幣，目前餘額 {user.tokens}）",
+        )
+
     # 1. Gather card configs for this student
     configs_result = await db.execute(
         select(CardConfig).where(CardConfig.student_id == user.id)
@@ -96,7 +118,7 @@ async def generate_card(
     for prev_card in prev_latest.scalars().all():
         prev_card.is_latest = False
 
-    # 5. Create new Card row
+    # 5. Create new Card row and deduct tokens atomically
     config_snapshot = json.dumps(card_config, ensure_ascii=False)
     new_card = Card(
         student_id=user.id,
@@ -107,6 +129,16 @@ async def generate_card(
         is_latest=True,
     )
     db.add(new_card)
+
+    if token_cost > 0:
+        user.tokens -= token_cost
+        txn = TokenTransaction(
+            student_id=user.id,
+            amount=-token_cost,
+            reason="重新生成角色卡牌",
+        )
+        db.add(txn)
+
     await db.commit()
     await db.refresh(new_card)
 
@@ -126,6 +158,15 @@ async def generate_card(
     except Exception as e:
         logger.error("Failed to submit generation for card %d: %s", new_card.id, e)
         new_card.status = "failed"
+        # Refund tokens if the ai-worker submission failed
+        if token_cost > 0:
+            user.tokens += token_cost
+            refund_txn = TokenTransaction(
+                student_id=user.id,
+                amount=token_cost,
+                reason="AI服務失敗退款",
+            )
+            db.add(refund_txn)
         await db.commit()
         raise HTTPException(
             status_code=502,
@@ -136,6 +177,7 @@ async def generate_card(
         "card_id": new_card.id,
         "job_id": job_id,
         "status": "generating",
+        "tokens_spent": token_cost,
     }
 
 

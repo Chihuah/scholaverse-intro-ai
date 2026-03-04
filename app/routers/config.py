@@ -10,7 +10,6 @@ from app.dependencies import get_current_user
 from app.models.card_config import CardConfig
 from app.models.learning_record import LearningRecord
 from app.models.student import Student
-from app.models.token_transaction import TokenTransaction
 from app.models.unit import Unit
 from app.services.scoring import get_available_options
 
@@ -104,23 +103,8 @@ async def update_config(
     )
     existing = existing_result.scalar_one_or_none()
 
-    tokens_spent = 0
-
     if existing:
-        # Modifying existing config costs 5 tokens
-        if user.tokens < 5:
-            raise HTTPException(status_code=400, detail="Insufficient tokens (need 5)")
-        user.tokens -= 5
-        tokens_spent = 5
-
-        # Record token transaction
-        txn = TokenTransaction(
-            student_id=user.id,
-            amount=-5,
-            reason=f"修改角色配置：{body.attribute_type}",
-        )
-        db.add(txn)
-
+        # Changing an attribute selection is free — tokens are spent at generation time
         existing.attribute_value = body.attribute_value
         await db.commit()
         await db.refresh(existing)
@@ -130,7 +114,7 @@ async def update_config(
             unit_code=unit_code,
             attribute_type=existing.attribute_type,
             attribute_value=existing.attribute_value,
-            tokens_spent=tokens_spent,
+            tokens_spent=0,
         )
     else:
         # New config — free

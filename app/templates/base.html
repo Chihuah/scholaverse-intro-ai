@@ -129,6 +129,12 @@
             {{ user.tokens }} 代幣
           </span>
         </div>
+        <a href="/logout"
+           class="flex items-center gap-1.5 font-tc text-[10px] text-[var(--rpg-text-secondary)]
+                  hover:text-[var(--rpg-danger)] transition-colors mt-1">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          登出帳號
+        </a>
         {% else %}
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-full shrink-0 bg-[var(--rpg-gold-dark)]/40 flex items-center justify-center">
