@@ -254,6 +254,7 @@ async def progress(
 
     # Check if user already has non-failed cards (affects generation cost)
     has_cards = False
+    has_configs = False
     if user:
         card_check = await db.execute(
             select(Card)
@@ -265,6 +266,14 @@ async def progress(
         )
         has_cards = card_check.scalar_one_or_none() is not None
 
+        # Check if any attribute configs have been set (required before generation)
+        config_check = await db.execute(
+            select(CardConfig)
+            .where(CardConfig.student_id == user.id)
+            .limit(1)
+        )
+        has_configs = config_check.scalar_one_or_none() is not None
+
     return templates.TemplateResponse(
         request,
         "learning/progress.html",
@@ -273,6 +282,7 @@ async def progress(
             "unit_data": unit_data,
             "guest_mode": settings.GUEST_MODE,
             "has_cards": has_cards,
+            "has_configs": has_configs,
             "regen_cost": 10,
         },
     )
