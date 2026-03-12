@@ -42,30 +42,43 @@
 
 <!-- Batch Action Bar (hidden until selection) -->
 <div id="batch-bar"
-     class="hidden shrink-0 flex items-center gap-3 rounded px-4 py-3
+     class="hidden shrink-0 flex flex-col gap-2 rounded px-4 py-3
             bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold)]">
-  <i data-lucide="coins" class="w-4 h-4 text-[var(--rpg-gold)] shrink-0"></i>
-  <span id="sel-count" class="font-tc text-[10px] text-[var(--rpg-gold)] shrink-0">已選 0 人</span>
-  <div class="flex items-center gap-2 flex-1">
-    <label class="font-tc text-[10px] text-[var(--rpg-text-secondary)] shrink-0">發放點數</label>
-    <input id="token-amount" type="number" min="1" max="9999" value="5" placeholder="點數"
-           class="w-24 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
-                  font-tc text-[10px] text-[var(--rpg-text-primary)] text-center
-                  focus:outline-none focus:border-[var(--rpg-gold)]">
-    <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">點</span>
+  <!-- Row 1: count + amount + grant + cancel -->
+  <div class="flex items-center gap-3 flex-wrap">
+    <i data-lucide="coins" class="w-4 h-4 text-[var(--rpg-gold)] shrink-0"></i>
+    <span id="sel-count" class="font-tc text-[10px] text-[var(--rpg-gold)] shrink-0">已選 0 人</span>
+    <div class="flex items-center gap-2">
+      <label class="font-tc text-[10px] text-[var(--rpg-text-secondary)] shrink-0">發放點數</label>
+      <input id="token-amount" type="number" min="1" max="9999" value="5" placeholder="點數"
+             class="w-24 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
+                    font-tc text-[10px] text-[var(--rpg-text-primary)] text-center
+                    focus:outline-none focus:border-[var(--rpg-gold)]">
+      <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">點</span>
+    </div>
+    <button onclick="batchGrantTokens()"
+            class="flex items-center gap-1.5 rounded px-3 py-1.5
+                   bg-[var(--rpg-gold-dark)] border border-[var(--rpg-gold)]
+                   font-tc text-[10px] font-bold text-[var(--rpg-gold-bright)]
+                   transition-opacity hover:opacity-90 shrink-0">
+      <i data-lucide="gift" class="w-3 h-3"></i>
+      批次發放
+    </button>
+    <button onclick="clearSelection()"
+            class="font-tc text-[10px] text-[var(--rpg-text-secondary)] hover:text-[var(--rpg-gold)] shrink-0">
+      取消
+    </button>
   </div>
-  <button onclick="batchGrantTokens()"
-          class="flex items-center gap-1.5 rounded px-3 py-1.5
-                 bg-[var(--rpg-gold-dark)] border border-[var(--rpg-gold)]
-                 font-tc text-[10px] font-bold text-[var(--rpg-gold-bright)]
-                 transition-opacity hover:opacity-90 shrink-0">
-    <i data-lucide="gift" class="w-3 h-3"></i>
-    批次發放
-  </button>
-  <button onclick="clearSelection()"
-          class="font-tc text-[10px] text-[var(--rpg-text-secondary)] hover:text-[var(--rpg-gold)] shrink-0">
-    取消
-  </button>
+  <!-- Row 2: note -->
+  <div class="flex items-center gap-2">
+    <i data-lucide="pencil-line" class="w-3.5 h-3.5 text-[var(--rpg-text-secondary)] shrink-0"></i>
+    <label class="font-tc text-[10px] text-[var(--rpg-text-secondary)] shrink-0">發放備註</label>
+    <input id="token-note" type="text" maxlength="100" placeholder="填寫發放原因或說明（選填）"
+           class="flex-1 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
+                  font-tc text-[10px] text-[var(--rpg-text-primary)]
+                  placeholder:text-[var(--rpg-text-secondary)] placeholder:opacity-50
+                  focus:outline-none focus:border-[var(--rpg-gold)]">
+  </div>
 </div>
 
 <!-- Student Table -->
@@ -178,6 +191,7 @@ function showToast(msg, ok) {
 async function batchGrantTokens() {
   const ids = getSelected();
   const amount = parseInt(document.getElementById('token-amount').value, 10);
+  const note = document.getElementById('token-note').value.trim();
 
   if (!ids.length) { showToast('請先勾選學生', false); return; }
   if (!amount || amount <= 0) { showToast('請輸入有效的發放點數', false); return; }
@@ -186,7 +200,7 @@ async function batchGrantTokens() {
     const res = await fetch('/api/admin/students/batch-tokens', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ student_ids: ids, amount }),
+      body: JSON.stringify({ student_ids: ids, amount, note }),
     });
     const data = await res.json();
     if (!res.ok) { showToast(data.detail || '發放失敗', false); return; }
@@ -202,6 +216,7 @@ async function batchGrantTokens() {
       }
     });
 
+    document.getElementById('token-note').value = '';
     clearSelection();
   } catch (e) {
     showToast('網路錯誤，請稍後再試', false);

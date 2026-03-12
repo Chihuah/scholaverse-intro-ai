@@ -133,12 +133,18 @@ async def generate_card(
 
     if token_cost > 0:
         user.tokens -= token_cost
-        txn = TokenTransaction(
+        db.add(TokenTransaction(
             student_id=user.id,
             amount=-token_cost,
-            reason="重新生成角色卡牌",
-        )
-        db.add(txn)
+            reason="生成新卡牌",
+        ))
+    else:
+        # First generation is free — still record for history
+        db.add(TokenTransaction(
+            student_id=user.id,
+            amount=0,
+            reason="生成新卡牌（首次免費）",
+        ))
 
     await db.commit()
     await db.refresh(new_card)

@@ -172,6 +172,15 @@ async def admin_student_detail(
     )
     cards = cards_result.scalars().all()
 
+    # Token transactions
+    from app.models.token_transaction import TokenTransaction
+    txn_result = await db.execute(
+        select(TokenTransaction)
+        .where(TokenTransaction.student_id == student.id)
+        .order_by(TokenTransaction.created_at.desc())
+    )
+    token_transactions = txn_result.scalars().all()
+
     return templates.TemplateResponse(
         request,
         "admin/student_detail.html",
@@ -181,6 +190,7 @@ async def admin_student_detail(
             "units": units,
             "records_by_unit": records_by_unit,
             "cards": cards,
+            "token_transactions": token_transactions,
         },
     )
 
@@ -288,7 +298,17 @@ async def api_admin_update_student(
         student.role = payload["role"]
 
     if "tokens" in payload:
-        student.tokens = int(payload["tokens"])
+        from app.models.token_transaction import TokenTransaction
+        old_tokens = student.tokens or 0
+        new_tokens = int(payload["tokens"])
+        student.tokens = new_tokens
+        if old_tokens != new_tokens:
+            db.add(TokenTransaction(
+                student_id=student.id,
+                amount=new_tokens - old_tokens,
+                reason=f"點數手動調整（{old_tokens} → {new_tokens}）",
+                created_at=datetime.now(timezone.utc),
+            ))
 
     student.updated_at = datetime.now(timezone.utc)
     await db.commit()
@@ -392,10 +412,13 @@ async def api_admin_batch_tokens(
 ):
     """Grant tokens to multiple students at once.
 
-    Payload: { student_ids: [int, ...], amount: int }
+    Payload: { student_ids: [int, ...], amount: int, note: str | None }
     """
+    from app.models.token_transaction import TokenTransaction
+
     student_ids = payload.get("student_ids", [])
     amount = payload.get("amount", 0)
+    note = payload.get("note", "").strip() or None
 
     if not student_ids:
         raise HTTPException(status_code=400, detail="未選擇任何學生")
@@ -412,10 +435,17 @@ async def api_admin_batch_tokens(
     if not students:
         raise HTTPException(status_code=404, detail="找不到指定學生")
 
+    now = datetime.now(timezone.utc)
     updated_ids = []
     for s in students:
         s.tokens = (s.tokens or 0) + amount
-        s.updated_at = datetime.now(timezone.utc)
+        s.updated_at = now
+        db.add(TokenTransaction(
+            student_id=s.id,
+            amount=amount,
+            reason=note,
+            created_at=now,
+        ))
         updated_ids.append(s.id)
 
     await db.commit()

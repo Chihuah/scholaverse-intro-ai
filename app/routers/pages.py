@@ -13,6 +13,7 @@ from app.models.card import Card
 from app.models.card_config import CardConfig
 from app.models.learning_record import LearningRecord
 from app.models.student import Student
+from app.models.token_transaction import TokenTransaction
 from app.models.unit import Unit
 from app.services.scoring import get_available_options
 from app.templating import templates
@@ -393,6 +394,37 @@ async def unit_detail(
             "chosen_attrs": chosen_attrs,
             "available": available,
             "attr_label": UNIT_ATTR_LABELS.get(unit_code, unit.unlock_attribute),
+            "guest_mode": settings.GUEST_MODE,
+        },
+    )
+
+
+@router.get("/tokens", response_class=HTMLResponse)
+async def tokens_history(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: Student | None = Depends(get_current_user_or_guest),
+):
+    """Token transaction history page (login required)."""
+    if not user:
+        return templates.TemplateResponse(
+            request, "tokens.html",
+            {"user": None, "transactions": [], "guest_mode": settings.GUEST_MODE},
+        )
+
+    result = await db.execute(
+        select(TokenTransaction)
+        .where(TokenTransaction.student_id == user.id)
+        .order_by(TokenTransaction.created_at.desc())
+    )
+    transactions = result.scalars().all()
+
+    return templates.TemplateResponse(
+        request,
+        "tokens.html",
+        {
+            "user": user,
+            "transactions": transactions,
             "guest_mode": settings.GUEST_MODE,
         },
     )
