@@ -6,7 +6,7 @@ from starlette.responses import Response, RedirectResponse
 
 from app.config import settings
 from app.database import async_session
-from app.services.auth import get_user_by_email
+from app.services.auth import award_daily_login, get_user_by_email
 
 # Paths that don't require a registered user
 PUBLIC_PATHS = frozenset({"/register", "/static", "/api/internal", "/logout"})
@@ -40,6 +40,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
             ) or async_session
             async with session_factory() as db:
                 user = await get_user_by_email(db, email)
+                if user and user.role == "student":
+                    await award_daily_login(db, user)
                 request.state.user = user
 
             # Redirect unregistered users to registration page

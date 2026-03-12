@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}代幣點數規則{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="flex items-center gap-2 shrink-0">
+  <i data-lucide="scroll" class="w-5 h-5 text-[var(--rpg-gold)]"></i>
+  <h1 class="font-pixel text-sm text-[var(--rpg-gold)]">代幣點數規則</h1>
+</div>
+
+<div class="flex flex-col gap-4 overflow-auto scrollbar-hide">
+
+  <!-- Intro -->
+  <div class="rounded border border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-panel)] px-5 py-4">
+    <p class="font-tc text-sm text-[var(--rpg-text-secondary)] leading-relaxed">
+      完成教學活動或遊戲任務時，可額外獲得點數。<strong class="text-[var(--rpg-text-primary)]">Token 點數</strong>能用於產生卡牌，累積越多、自訂空間越大！
+    </p>
+  </div>
+
+  <!-- Earn section -->
+  <div class="rounded border border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-panel)] overflow-hidden">
+    <div class="flex items-center gap-2 px-5 py-3 bg-[var(--rpg-bg-card)] border-b border-[var(--rpg-gold-dark)]">
+      <i data-lucide="circle-plus" class="w-4 h-4 text-[var(--rpg-success)]"></i>
+      <span class="font-pixel text-[11px] text-[var(--rpg-success)]">獲得點數</span>
+    </div>
+
+    <div class="divide-y divide-[var(--rpg-bg-input)]">
+
+      {% set earn_rules = [
+        ('早鳥註冊（前 50 名綁定帳號）', 30, 'zap', '一次'),
+        ('完成問卷填寫（期初、期中、期末）', 20, 'clipboard-list', '每份問卷一次'),
+        ('章節完成學習', 10, 'book-open-check', '每章節一次'),
+        ('完成前測（Pre-test）', 10, 'file-check', '每章節一次'),
+        ('每日登入學習網站', 1, 'calendar-check', '每天一次'),
+        ('不定期教學任務', 0, 'star', '依任務獎勵'),
+      ] %}
+
+      {% for label, amount, icon, note in earn_rules %}
+      <div class="flex items-center gap-4 px-5 py-3.5">
+        <div class="w-8 h-8 rounded flex items-center justify-center shrink-0
+                    bg-[var(--rpg-success)]/10 border border-[var(--rpg-success)]/30">
+          <i data-lucide="{{ icon }}" class="w-4 h-4 text-[var(--rpg-success)]"></i>
+        </div>
+        <div class="flex flex-col gap-0.5 flex-1">
+          <span class="font-tc text-sm text-[var(--rpg-text-primary)]">{{ label }}</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">{{ note }}</span>
+        </div>
+        <div class="shrink-0">
+          {% if amount > 0 %}
+          <span class="inline-flex items-center gap-1 rounded px-2.5 py-1
+                       bg-[var(--rpg-success)]/15 border border-[var(--rpg-success)]/40
+                       font-tc text-xs font-bold text-[var(--rpg-success)]">
+            <i data-lucide="coins" class="w-3 h-3"></i>
+            +{{ amount }} 點
+          </span>
+          {% else %}
+          <span class="inline-flex items-center gap-1 rounded px-2.5 py-1
+                       bg-[var(--rpg-bg-input)] border border-[#444]
+                       font-tc text-xs font-bold text-[var(--rpg-text-secondary)]">
+            <i data-lucide="coins" class="w-3 h-3"></i>
+            依任務
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+
+  <!-- Spend section -->
+  <div class="rounded border border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-panel)] overflow-hidden">
+    <div class="flex items-center gap-2 px-5 py-3 bg-[var(--rpg-bg-card)] border-b border-[var(--rpg-gold-dark)]">
+      <i data-lucide="circle-minus" class="w-4 h-4 text-[var(--rpg-danger)]"></i>
+      <span class="font-pixel text-[11px] text-[var(--rpg-danger)]">消耗點數</span>
+    </div>
+
+    <div class="divide-y divide-[var(--rpg-bg-input)]">
+
+      <div class="flex items-center gap-4 px-5 py-3.5">
+        <div class="w-8 h-8 rounded flex items-center justify-center shrink-0
+                    bg-[var(--rpg-danger)]/10 border border-[var(--rpg-danger)]/30">
+          <i data-lucide="image" class="w-4 h-4 text-[var(--rpg-danger)]"></i>
+        </div>
+        <div class="flex flex-col gap-0.5 flex-1">
+          <span class="font-tc text-sm text-[var(--rpg-text-primary)]">卡牌生成（每張）</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">每次生成消耗</span>
+        </div>
+        <span class="inline-flex items-center gap-1 rounded px-2.5 py-1
+                     bg-[var(--rpg-danger)]/15 border border-[var(--rpg-danger)]/40
+                     font-tc text-xs font-bold text-[var(--rpg-danger)] shrink-0">
+          <i data-lucide="coins" class="w-3 h-3"></i>
+          −5 點
+        </span>
+      </div>
+
+      <!-- Coming soon -->
+      <div class="flex items-center gap-4 px-5 py-3.5 opacity-50">
+        <div class="w-8 h-8 rounded flex items-center justify-center shrink-0
+                    bg-[var(--rpg-bg-input)] border border-[#444]">
+          <i data-lucide="wand-sparkles" class="w-4 h-4 text-[var(--rpg-text-secondary)]"></i>
+        </div>
+        <div class="flex flex-col gap-0.5 flex-1">
+          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">學生自訂提示詞生圖</span>
+          <span class="inline-flex items-center gap-1 font-tc text-[10px] text-[var(--rpg-text-secondary)]">
+            <i data-lucide="clock" class="w-3 h-3"></i>
+            即將推出
+          </span>
+        </div>
+        <span class="inline-flex items-center gap-1 rounded px-2.5 py-1
+                     bg-[var(--rpg-bg-input)] border border-[#444]
+                     font-tc text-xs font-bold text-[var(--rpg-text-secondary)] shrink-0">
+          <i data-lucide="coins" class="w-3 h-3"></i>
+          −15 點
+        </span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CTA -->
+  {% if user %}
+  <div class="flex items-center justify-between rounded border border-[var(--rpg-gold-dark)]
+              bg-[var(--rpg-bg-panel)] px-5 py-4">
+    <div class="flex items-center gap-2">
+      <i data-lucide="wallet" class="w-4 h-4 text-[var(--rpg-gold-bright)]"></i>
+      <span class="font-tc text-sm font-bold text-[var(--rpg-gold-bright)]">目前餘額：{{ user.tokens }} 點</span>
+    </div>
+    <a href="/tokens"
+       class="inline-flex items-center gap-1.5 rounded px-3 py-1.5
+              border border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-card)]
+              font-tc text-xs text-[var(--rpg-gold)] hover:bg-[var(--rpg-gold-dark)]/30 transition-colors">
+      <i data-lucide="list" class="w-3.5 h-3.5"></i>
+      查看點數紀錄
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,8 +1,8 @@
 """Student ORM model."""
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import Integer, String, DateTime
+from sqlalchemy import Date, Integer, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -18,6 +18,7 @@ class Student(Base):
     nickname: Mapped[str | None] = mapped_column(String(18), nullable=True)
     role: Mapped[str] = mapped_column(String, nullable=False, default="student")
     tokens: Mapped[int] = mapped_column(Integer, default=0)
+    last_login_date: Mapped[date | None] = mapped_column(Date, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )

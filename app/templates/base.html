@@ -78,6 +78,7 @@
           ('/cards', 'image', '我的卡牌', false),
           ('/hall', 'swords', '角色大廳', false),
           ('/progress', 'scroll-text', '學習歷程', false),
+          ('/token-rules', 'scroll', '點數規則', false),
           ('/tokens', 'coins', '點數紀錄', true),
         ] %}
         {% for href, icon, label, login_only in nav_items %}
@@ -116,16 +117,24 @@
       <!-- User Info -->
       <div class="flex flex-col gap-2 px-1 py-2">
         {% if user %}
-        <div class="flex items-center gap-2">
+        <a href="/profile" onclick="closeSidebar()"
+           class="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <div class="w-8 h-8 rounded-full shrink-0 bg-[var(--rpg-gold-dark)] flex items-center justify-center">
             <span class="font-pixel text-[10px] text-[var(--rpg-gold)]">
               {{ user.email[0] | upper }}
             </span>
           </div>
-          <span class="font-tc text-[11px] text-[var(--rpg-text-secondary)] truncate">
-            {{ user.email }}
-          </span>
-        </div>
+          <div class="flex flex-col min-w-0">
+            {% if user.nickname %}
+            <span class="font-tc text-[11px] font-bold text-[var(--rpg-text-primary)] truncate">
+              {{ user.nickname }}
+            </span>
+            {% endif %}
+            <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)] truncate">
+              {{ user.email }}
+            </span>
+          </div>
+        </a>
         <div class="flex items-center gap-1.5">
           <i data-lucide="coins" class="w-4 h-4 text-[var(--rpg-gold-bright)]"></i>
           <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold-bright)]">

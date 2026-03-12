@@ -399,6 +399,19 @@ async def unit_detail(
     )
 
 
+@router.get("/token-rules", response_class=HTMLResponse)
+async def token_rules(
+    request: Request,
+    user: Student | None = Depends(get_current_user_or_guest),
+):
+    """Token points rules page (public)."""
+    return templates.TemplateResponse(
+        request,
+        "token_rules.html",
+        {"user": user, "guest_mode": settings.GUEST_MODE},
+    )
+
+
 @router.get("/tokens", response_class=HTMLResponse)
 async def tokens_history(
     request: Request,
@@ -427,6 +440,63 @@ async def tokens_history(
             "transactions": transactions,
             "guest_mode": settings.GUEST_MODE,
         },
+    )
+
+
+@router.get("/profile", response_class=HTMLResponse)
+async def profile_page(
+    request: Request,
+    user: Student | None = Depends(get_current_user_or_guest),
+):
+    """Personal profile page."""
+    return templates.TemplateResponse(
+        request,
+        "profile.html",
+        {"user": user, "guest_mode": settings.GUEST_MODE},
+    )
+
+
+@router.post("/profile", response_class=HTMLResponse)
+async def profile_update(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: Student | None = Depends(get_current_user_or_guest),
+):
+    """Update nickname."""
+    import re
+
+    if not user:
+        return templates.TemplateResponse(
+            request, "profile.html",
+            {"user": None, "guest_mode": settings.GUEST_MODE},
+        )
+
+    form = await request.form()
+    nickname = form.get("nickname", "").strip()
+
+    if not nickname:
+        return templates.TemplateResponse(
+            request, "profile.html",
+            {"user": user, "guest_mode": settings.GUEST_MODE, "error": "請輸入暱稱"},
+            status_code=400,
+        )
+
+    if not re.match(r'^[a-zA-Z0-9]+$', nickname) or len(nickname) > 18:
+        return templates.TemplateResponse(
+            request, "profile.html",
+            {"user": user, "guest_mode": settings.GUEST_MODE,
+             "error": "暱稱僅限英數字，最多 18 字元"},
+            status_code=400,
+        )
+
+    user.nickname = nickname
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    return templates.TemplateResponse(
+        request, "profile.html",
+        {"user": user, "guest_mode": settings.GUEST_MODE, "success": True},
     )
 
 

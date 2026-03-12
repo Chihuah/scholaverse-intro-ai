@@ -1,10 +1,16 @@
 """Authentication service - Cloudflare Zero Trust header parsing + user lookup."""
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.models.student import Student
+from app.models.token_transaction import TokenTransaction
+
+TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Student | None:
@@ -47,6 +53,23 @@ async def bind_student_email(
     await db.commit()
     await db.refresh(student)
     return student
+
+
+async def award_daily_login(db: AsyncSession, student: Student) -> bool:
+    """Award 1 token for the first login of each calendar day (Asia/Taipei).
+
+    Returns True if the bonus was awarded, False if already awarded today.
+    """
+    today = datetime.now(TAIPEI_TZ).date()
+    if student.last_login_date == today:
+        return False
+
+    student.tokens += 1
+    student.last_login_date = today
+    db.add(TokenTransaction(student_id=student.id, amount=1, reason="每日登入獎勵"))
+    await db.commit()
+    await db.refresh(student)
+    return True
 
 
 def get_cf_email(headers: dict) -> str | None:
