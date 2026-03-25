@@ -1,12 +1,18 @@
-"""Internal API routes — VM-to-VM callbacks.
+"""Internal API routes — VM-to-VM callbacks and image proxy.
 
 POST /api/internal/generation-callback — AI worker completion callback
+GET  /api/images/proxy/{path}          — Proxy images from internal VMs over HTTPS
 """
 
 import logging
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
+_TAIPEI_TZ = ZoneInfo("Asia/Taipei")
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,13 +23,19 @@ from app.models.card import Card
 
 
 def _image_path_to_url(image_path: str | None) -> str | None:
-    """Convert ai-worker image_path (e.g. /students/123/cards/card_042.png)
-    to a proxy URL via ai-worker's /api/images/ endpoint."""
+    """Convert ai-worker image_path to a browser-safe URL.
+
+    /static/... paths (mock mode) are returned as-is.
+    All other paths are rewritten to go through the web-server's own
+    /api/images/proxy/ endpoint so the browser never needs to reach
+    an internal HTTP-only VM directly (avoids Mixed Content errors).
+    """
     if not image_path:
         return None
+    if image_path.startswith("/static/"):
+        return image_path
     stripped = image_path.lstrip("/")
-    base = settings.AI_WORKER_BASE_URL.rstrip("/")
-    return f"{base}/api/images/{stripped}"
+    return f"/api/images/proxy/{stripped}"
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +77,11 @@ async def generation_callback(
         card.thumbnail_url = _image_path_to_url(body.thumbnail_path)
         if body.generated_at:
             try:
-                card.generated_at = datetime.fromisoformat(body.generated_at)
+                dt = datetime.fromisoformat(body.generated_at)
+                if dt.tzinfo is None:
+                    # ai-worker sends Taipei local time without tzinfo — convert to UTC
+                    dt = dt.replace(tzinfo=_TAIPEI_TZ).astimezone(timezone.utc)
+                card.generated_at = dt.replace(tzinfo=None)  # store as naive UTC
             except ValueError:
                 card.generated_at = datetime.now(timezone.utc)
         else:
@@ -80,3 +96,28 @@ async def generation_callback(
 
     await db.commit()
     return {"status": "ok", "card_id": body.card_id}
+
+
+image_proxy_router = APIRouter(prefix="/api/images", tags=["images"])
+
+
+@image_proxy_router.get("/proxy/{path:path}")
+async def proxy_image(path: str):
+    """Proxy images from internal VMs so browsers can load them over HTTPS.
+
+    Tries db-storage first, falls back to ai-worker.
+    """
+    urls = [
+        f"{settings.DB_STORAGE_BASE_URL.rstrip('/')}/api/images/{path}",
+        f"{settings.AI_WORKER_BASE_URL.rstrip('/')}/api/images/{path}",
+    ]
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for url in urls:
+            try:
+                resp = await client.get(url)
+                if resp.status_code == 200:
+                    content_type = resp.headers.get("content-type", "image/png")
+                    return Response(content=resp.content, media_type=content_type)
+            except httpx.HTTPError:
+                continue
+    raise HTTPException(status_code=404, detail="Image not found")
