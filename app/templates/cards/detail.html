@@ -20,7 +20,7 @@
            style="border: 3px solid {{ bc }};
                   {% if card.border_style == 'gold' %}box-shadow: 0 0 16px 3px rgba(255,215,0,0.4);{% endif %}">
         {% if card.image_url %}
-        <img id="card-img" src="{{ card.image_url }}" alt="卡牌" class="w-full h-full object-cover">
+        <img id="card-img" src="{{ card.image_url | safe_img_url }}" alt="卡牌" class="w-full h-full object-cover">
         {% elif card.status in ('pending', 'generating') %}
         <!-- Generating state -->
         <div id="card-generating" class="w-full h-full flex flex-col items-center justify-center gap-3
@@ -105,7 +105,11 @@
         if (spinner) spinner.remove();
         const img = document.createElement('img');
         img.id = 'card-img';
-        img.src = data.image_url;
+        // Rewrite any direct internal-IP URL through the server-side proxy
+        const rawUrl = data.image_url;
+        img.src = /^https?:\/\/(?:192\.168\.|10\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(rawUrl)
+          ? '/api/images/proxy/' + new URL(rawUrl).pathname.replace(/^\/api\/images\//, '').replace(/^\//, '')
+          : rawUrl;
         img.alt = '卡牌';
         img.className = 'w-full h-full object-cover';
         container.appendChild(img);

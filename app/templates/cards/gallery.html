@@ -36,7 +36,7 @@
            style="border: 3px solid {{ border_color }};
                   {% if card.is_latest %}box-shadow: 0 0 12px 2px {{ border_color }}66;{% endif %}">
         {% if card.image_url %}
-        <img src="{{ card.image_url }}" alt="卡牌" class="w-full h-full object-cover">
+        <img src="{{ card.image_url | safe_img_url }}" alt="卡牌" class="w-full h-full object-cover">
         {% else %}
         <img src="/static/images/placeholder/card-copper-1.png" alt="卡牌" class="w-full h-full object-cover">
         {% endif %}

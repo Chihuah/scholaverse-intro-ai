@@ -33,7 +33,7 @@
     <div class="w-40 h-56 md:w-[200px] md:h-[280px] rounded overflow-hidden"
          style="border: 3px solid {{ border_color }};{% if border_style == 'gold' %} box-shadow: 0 0 12px 2px rgba(255,215,0,0.4);{% endif %}">
       {% if latest_card and latest_card.image_url %}
-      <img src="{{ latest_card.image_url }}" alt="角色卡牌" class="w-full h-full object-cover">
+      <img src="{{ latest_card.image_url | safe_img_url }}" alt="角色卡牌" class="w-full h-full object-cover">
       {% else %}
       <div class="w-full h-full bg-[var(--rpg-bg-card)] flex flex-col items-center justify-center gap-2">
         <i data-lucide="image" class="w-10 h-10 text-[var(--rpg-text-secondary)] opacity-40"></i>
