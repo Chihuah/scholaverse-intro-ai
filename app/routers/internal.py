@@ -6,9 +6,6 @@ GET  /api/images/proxy/{path}          — Proxy images from internal VMs over H
 
 import logging
 from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
-
-_TAIPEI_TZ = ZoneInfo("Asia/Taipei")
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
@@ -77,11 +74,7 @@ async def generation_callback(
         card.thumbnail_url = _image_path_to_url(body.thumbnail_path)
         if body.generated_at:
             try:
-                dt = datetime.fromisoformat(body.generated_at)
-                if dt.tzinfo is None:
-                    # ai-worker sends Taipei local time without tzinfo — convert to UTC
-                    dt = dt.replace(tzinfo=_TAIPEI_TZ).astimezone(timezone.utc)
-                card.generated_at = dt.replace(tzinfo=None)  # store as naive UTC
+                card.generated_at = datetime.fromisoformat(body.generated_at)
             except ValueError:
                 card.generated_at = datetime.now(timezone.utc)
         else:
