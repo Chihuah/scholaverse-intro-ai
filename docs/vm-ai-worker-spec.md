@@ -80,7 +80,7 @@ vm-web-server 呼叫此端點送出生圖任務。服務端收到後立即回應
 {
   "job_id": "550e8400-e29b-41d4-a716-446655440000",
   "card_id": 1,
-  "student_number": "411234567",
+  "student_id": "411234567",
   "card_config": {
     "race": "elf",
     "gender": "female",
@@ -116,7 +116,7 @@ vm-web-server 呼叫此端點送出生圖任務。服務端收到後立即回應
 |------|------|------|------|
 | job_id | string (UUID) | ✓ | vm-web-server 產生的唯一任務 ID |
 | card_id | integer | ✓ | 對應 vm-web-server 資料庫中的 Card.id |
-| student_number | string | ✓ | 學生學號（純數字），同時作為 sd-cli 的固定 seed |
+| student_id | string | ✓ | 學生學號（純數字），同時作為 sd-cli 的固定 seed |
 | card_config | object | ✓ | 角色屬性配置（詳見第 5 節映射表） |
 | learning_data | object | ✓ | 學生學習數據，可供 LLM 作為 prompt 風格參考 |
 | style_hint | string | ✗ | 風格提示，預設 "16-bit pixel art, fantasy RPG character card" |
@@ -393,16 +393,16 @@ Learning Performance Context:
 
 1. **LoRA 觸發詞**：`<lora:moode_fantasy_Impressions:0.5>`
 2. **風格前綴**：`Digital painting, epic fantasy art, painterly texture, ...`
-3. **Seed**：`int(student_number)`（學號轉整數）
+3. **Seed**：`int(student_id)`（學號轉整數）
 
 ```python
 # sd_runner.py 內部邏輯
 PROMPT_PREFIX = "<lora:moode_fantasy_Impressions:0.5> Digital painting, epic fantasy art, painterly texture, majestic and awe-inspiring atmosphere, high detail."
 
 # ollama_prompt = Ollama 產出的純角色描述（不含 LoRA / 前綴）
-# student_number = 來自 request body 的學號
+# student_id = 來自 request body 的學號
 final_prompt = f"{PROMPT_PREFIX} {ollama_prompt}"
-seed = int(student_number)
+seed = int(student_id)
 
 cmd = [
     "./build/bin/sd-cli",
@@ -428,7 +428,7 @@ cmd = [
 | 解析度 | 880×1280 | 直式卡牌比例 |
 | steps | 10 | 擴散步數 |
 | cfg_scale | 1.0 | FLUX 模型推薦值 |
-| seed | int(student_number) | 固定使用學生學號作為 seed，確保同一學生重複生成時基底一致 |
+| seed | int(student_id) | 固定使用學生學號作為 seed，確保同一學生重複生成時基底一致 |
 | LoRA | moode_fantasy_Impressions:0.5 | 奇幻繪畫風格（由 sd_runner.py 自動加入 prompt 前綴） |
 
 > **注意**：sd-cli 內建的 `--llm` 參數（Qwen3-4b）會對 prompt 再做一層潤飾。因此 Ollama 產生的 prompt 已經是精細的描述，sd-cli 的內建 LLM 會在此基礎上進一步最佳化。
@@ -630,7 +630,7 @@ A female Elf Mage with pointed ears and ethereal features, slender lean frame, w
 PROMPT_PREFIX = "<lora:moode_fantasy_Impressions:0.5> Digital painting, epic fantasy art, painterly texture, majestic and awe-inspiring atmosphere, high detail."
 
 final_prompt = f"{PROMPT_PREFIX} {ollama_prompt}"
-seed = int(student_number)   # 例如 "411234567" → 411234567
+seed = int(student_id)   # 例如 "411234567" → 411234567
 ```
 
 最終送入 sd-cli 的完整 prompt：
@@ -660,7 +660,7 @@ from datetime import datetime
 class GenerationJob:
     job_id: str
     card_id: int
-    student_number: str
+    student_id: str
     card_config: dict
     learning_data: dict
     style_hint: str
@@ -712,8 +712,8 @@ async def worker_loop(queue: JobQueue):
             prompt = await generate_prompt_with_ollama(job.card_config, job.learning_data)
             job.prompt = prompt
 
-            # Step 2: sd-cli image generation (seed = student_number, auto-prepend LoRA + prefix)
-            output_path = await run_sd_cli(prompt, job.job_id, job.student_number)
+            # Step 2: sd-cli image generation (seed = student_id, auto-prepend LoRA + prefix)
+            output_path = await run_sd_cli(prompt, job.job_id, job.student_id)
 
             # Step 3: Generate thumbnail
             thumbnail_path = await create_thumbnail(output_path)
@@ -890,7 +890,7 @@ class LearningData(BaseModel):
 class GenerateRequest(BaseModel):
     job_id: str
     card_id: int
-    student_number: str             # 學號（純數字），作為 sd-cli seed
+    student_id: str                 # 學號（純數字），作為 sd-cli seed
     card_config: CardConfig
     learning_data: LearningData
     style_hint: str = "16-bit pixel art, fantasy RPG character card"
@@ -961,7 +961,7 @@ DEFAULT_WIDTH=880
 DEFAULT_STEPS=10
 DEFAULT_CFG=1.0
 DEFAULT_PROMPT_PREFIX=<lora:moode_fantasy_Impressions:0.5> Digital painting, epic fantasy art, painterly texture, majestic and awe-inspiring atmosphere, high detail.
-# 注意：seed 不在此設定，固定使用 request body 中的 student_number（學號）
+# 注意：seed 不在此設定，固定使用 request body 中的 student_id（學號）
 
 # === Ollama 設定 ===
 OLLAMA_BASE_URL=http://localhost:11434

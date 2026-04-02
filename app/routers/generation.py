@@ -83,33 +83,43 @@ async def generate_card(
     rows = records_result.all()
 
     unit_scores: dict = {}
-    total_completion = 0.0
+    total_exp_sum = 0.0
     count = 0
     for record, unit in rows:
         unit_scores[unit.code] = {
-            "preview": record.preview_score,
+            "homework": record.preview_score,
             "completion": record.completion_rate,
             "quiz": record.quiz_score,
         }
+        if unit.code == "unit_6":
+            exp = record.completion_rate or 0.0
+        else:
+            exp = (
+                (record.preview_score or 0.0) * 0.2
+                + (record.completion_rate or 0.0) * 0.4
+                + (record.quiz_score or 0.0) * 0.4
+            )
+        total_exp_sum += exp
         if record.completion_rate is not None:
-            total_completion += record.completion_rate
             count += 1
-
-    overall_completion = (total_completion / count) if count > 0 else 0.0
 
     learning_data = {
         "unit_scores": unit_scores,
-        "overall_completion": round(overall_completion, 1),
+        "overall_completion": round(total_exp_sum / 6, 1),
     }
 
     # 3. Determine border and level from scoring rules
     from app.services.scoring import calculate_card_level, determine_border_style
 
-    level = calculate_card_level(overall_completion)
+    level = calculate_card_level(total_exp_sum)
     border = determine_border_style(count * 3)  # rough estimate: ~3 weeks per unit
 
     card_config["border"] = border
     card_config["level"] = level
+
+    # expression / pose come from unit_6 (自主學習); supply defaults if not yet configured
+    card_config.setdefault("expression", "calm")
+    card_config.setdefault("pose", "standing")
 
     # 4. Mark previous latest card as not latest (keep track to restore on failure)
     prev_latest_result = await db.execute(

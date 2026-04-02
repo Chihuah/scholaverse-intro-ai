@@ -229,12 +229,21 @@ async def progress(
         rate = record.completion_rate if record and record.completion_rate else 0
 
         # Determine status
-        if record is None:
-            status = "locked"
-        elif record.quiz_score and record.quiz_score > 0:
-            status = "completed"
+        # Determine status
+        if u.code == "unit_6":
+            # unit_6 has no pretest/quiz; completion_rate is the only signal
+            if record is not None and record.completion_rate and record.completion_rate > 0:
+                status = "completed"
+            else:
+                status = "locked"
         else:
-            status = "in_progress"
+            unlocked = record is not None and record.pretest_score is not None
+            if not unlocked:
+                status = "locked"
+            elif record.quiz_score and record.quiz_score > 0:
+                status = "completed"
+            else:
+                status = "in_progress"
 
         # Build chosen attributes display
         chosen_attrs = {c.attribute_type: c.attribute_value for c in configs}

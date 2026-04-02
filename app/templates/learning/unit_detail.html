@@ -33,48 +33,101 @@
 
   <!-- Scores panel -->
   {% if record %}
+  {% set is_unit6 = unit.code == 'unit_6' %}
+  {% set ptv = record.pretest_score | round(1) if record.pretest_score is not none else none %}
+  {% set pv  = record.preview_score | round(0) | int if record.preview_score is not none else none %}
+  {% set cv  = record.completion_rate | round(0) | int if record.completion_rate is not none else none %}
+  {% set qv  = record.quiz_score | round(1) if record.quiz_score is not none else none %}
+  {% if is_unit6 %}
+    {% set exp = (cv or 0) | float %}
+  {% else %}
+    {% set exp = ((pv or 0) * 0.2 + (cv or 0) * 0.4 + (qv or 0) * 0.4) | round(1) %}
+  {% endif %}
+  {% set tier = "S" if exp >= 90 else ("A" if exp >= 80 else ("B" if exp >= 70 else ("C" if exp >= 60 else "D"))) %}
+  {% set tier_color = "#d4a847" if tier == "S" else ("#4ade80" if tier == "A" else ("#60a5fa" if tier == "B" else ("#f59e0b" if tier == "C" else "#f87171"))) %}
+  {% set tier_label = "王者境界" if tier == "S" else ("卓越精進" if tier == "A" else ("穩健成長" if tier == "B" else ("初露鋒芒" if tier == "C" else "尚需努力"))) %}
   <div class="rounded px-4 py-4 bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)]">
     <p class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)] mb-3">學習成績</p>
-    <div class="grid grid-cols-3 gap-3">
+
+    <!-- EXP 英雄區塊 -->
+    <div class="flex items-center gap-4 mb-4 pb-4 border-b border-[var(--rpg-gold-dark)]/40">
+      <!-- 大 Tier 徽章 -->
+      <div class="flex items-center justify-center w-14 h-14 rounded shrink-0 font-pixel text-2xl"
+           style="color: {{ tier_color }}; background: {{ tier_color }}18; border: 2px solid {{ tier_color }}66">
+        {{ tier }}
+      </div>
+      <!-- 分數 + 標籤 + 進度條 -->
+      <div class="flex-1 flex flex-col gap-1.5">
+        <div class="flex items-baseline gap-2">
+          <span class="font-pixel text-xl" style="color: {{ tier_color }}">{{ exp }}</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">學習 EXP</span>
+          <span class="font-tc text-[10px] font-bold ml-auto" style="color: {{ tier_color }}">{{ tier_label }}</span>
+        </div>
+        <div class="w-full h-3 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
+          <div class="h-full rounded-sm transition-all"
+               style="width: {{ [exp, 100] | min }}%; background: linear-gradient(90deg, {{ tier_color }}99, {{ tier_color }})"></div>
+        </div>
+        <p class="font-tc text-[9px] text-[var(--rpg-text-secondary)]">
+          {% if not is_unit6 %}影片預習 ×20% + 課程完成度 ×40% + 課後測驗 ×40%
+          {% else %}課程完成度 ×100%{% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+
+      <!-- 前測成績 -->
+      <div class="flex flex-col gap-1">
+        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">前測成績</span>
+        <span class="font-tc text-base font-bold {% if is_unit6 or ptv is none %}text-[var(--rpg-text-secondary)]{% elif ptv >= 70 %}text-[var(--rpg-success)]{% elif ptv >= 40 %}text-[var(--rpg-warning)]{% else %}text-[var(--rpg-danger)]{% endif %}">
+          {% if is_unit6 or ptv is none %}—{% else %}{{ ptv }} 分{% endif %}
+        </span>
+        <div class="w-full h-1.5 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
+          {% if not is_unit6 and ptv is not none %}
+          <div class="h-full rounded-sm {% if ptv >= 70 %}bg-[var(--rpg-success)]{% elif ptv >= 40 %}bg-[var(--rpg-warning)]{% else %}bg-[var(--rpg-danger)]{% endif %}" style="width: {{ ptv }}%"></div>
+          {% endif %}
+        </div>
+      </div>
+
       <!-- 影片預習 -->
-      <div class="flex flex-col gap-0.5 w-full">
-        <div class="flex items-center justify-between">
-          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">影片預習</span>
-          <span class="font-tc text-[10px] font-bold text-[var(--rpg-text-primary)]">
-            {{ record.preview_score | round(0) | int if record.preview_score else 0 }}%
-          </span>
-        </div>
-        {% set pv = record.preview_score | round(0) | int if record.preview_score else 0 %}
-        <div class="w-full h-2 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
+      <div class="flex flex-col gap-1">
+        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">影片預習</span>
+        <span class="font-tc text-base font-bold {% if is_unit6 or pv is none %}text-[var(--rpg-text-secondary)]{% elif pv >= 70 %}text-[var(--rpg-success)]{% elif pv >= 40 %}text-[var(--rpg-warning)]{% else %}text-[var(--rpg-danger)]{% endif %}">
+          {% if is_unit6 or pv is none %}—{% else %}{{ pv }}%{% endif %}
+        </span>
+        <div class="w-full h-1.5 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
+          {% if not is_unit6 and pv is not none %}
           <div class="h-full rounded-sm {% if pv >= 70 %}bg-[var(--rpg-success)]{% elif pv >= 40 %}bg-[var(--rpg-warning)]{% else %}bg-[var(--rpg-danger)]{% endif %}" style="width: {{ pv }}%"></div>
+          {% endif %}
         </div>
       </div>
+
       <!-- 課程完成度 -->
-      <div class="flex flex-col gap-0.5 w-full">
-        <div class="flex items-center justify-between">
-          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">課程完成度</span>
-          <span class="font-tc text-[10px] font-bold text-[var(--rpg-text-primary)]">
-            {{ record.completion_rate | round(0) | int if record.completion_rate else 0 }}%
-          </span>
-        </div>
-        {% set cv = record.completion_rate | round(0) | int if record.completion_rate else 0 %}
-        <div class="w-full h-2 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
+      <div class="flex flex-col gap-1">
+        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">課程完成度</span>
+        <span class="font-tc text-base font-bold {% if cv is none %}text-[var(--rpg-text-secondary)]{% elif cv >= 70 %}text-[var(--rpg-success)]{% elif cv >= 40 %}text-[var(--rpg-warning)]{% else %}text-[var(--rpg-danger)]{% endif %}">
+          {% if cv is none %}—{% else %}{{ cv }}%{% endif %}
+        </span>
+        <div class="w-full h-1.5 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
+          {% if cv is not none %}
           <div class="h-full rounded-sm {% if cv >= 70 %}bg-[var(--rpg-success)]{% elif cv >= 40 %}bg-[var(--rpg-warning)]{% else %}bg-[var(--rpg-danger)]{% endif %}" style="width: {{ cv }}%"></div>
+          {% endif %}
         </div>
       </div>
-      <!-- 章節測驗 -->
-      <div class="flex flex-col gap-0.5 w-full">
-        <div class="flex items-center justify-between">
-          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">章節測驗</span>
-          <span class="font-tc text-[10px] font-bold text-[var(--rpg-text-primary)]">
-            {{ record.quiz_score | round(0) | int if record.quiz_score else 0 }}%
-          </span>
-        </div>
-        {% set qv = record.quiz_score | round(0) | int if record.quiz_score else 0 %}
-        <div class="w-full h-2 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
+
+      <!-- 課後測驗 -->
+      <div class="flex flex-col gap-1">
+        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">課後測驗</span>
+        <span class="font-tc text-base font-bold {% if is_unit6 or qv is none %}text-[var(--rpg-text-secondary)]{% elif qv >= 70 %}text-[var(--rpg-success)]{% elif qv >= 40 %}text-[var(--rpg-warning)]{% else %}text-[var(--rpg-danger)]{% endif %}">
+          {% if is_unit6 or qv is none %}—{% else %}{{ qv }} 分{% endif %}
+        </span>
+        <div class="w-full h-1.5 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
+          {% if not is_unit6 and qv is not none %}
           <div class="h-full rounded-sm {% if qv >= 70 %}bg-[var(--rpg-success)]{% elif qv >= 40 %}bg-[var(--rpg-warning)]{% else %}bg-[var(--rpg-danger)]{% endif %}" style="width: {{ qv }}%"></div>
+          {% endif %}
         </div>
       </div>
+
     </div>
   </div>
   {% endif %}

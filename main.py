@@ -8,7 +8,8 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.database import init_db
 from app.middleware import AuthMiddleware
-from app.routers import admin, announcements, config, generation, internal, pages, tokens
+from app.routers import admin, announcements, config, generation, pages, tokens
+from app.routers.internal import image_proxy_router, router as internal_router
 
 
 @asynccontextmanager
@@ -32,7 +33,8 @@ app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="stat
 # Routers
 app.include_router(pages.router)
 app.include_router(generation.router)
-app.include_router(internal.router)
+app.include_router(internal_router)
+app.include_router(image_proxy_router)
 app.include_router(config.router)
 app.include_router(tokens.router)
 app.include_router(admin.router)

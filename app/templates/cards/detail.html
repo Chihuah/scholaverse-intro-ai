@@ -52,13 +52,19 @@
 
     <!-- Attributes from config_snapshot -->
     {% set snap = card.config_snapshot | fromjson %}
+    {% set attr_labels = {
+      'race': '種族', 'gender': '性別', 'class': '職業', 'body': '體型',
+      'equipment': '裝備', 'weapon_quality': '武器品質', 'weapon_type': '武器類型',
+      'background': '背景', 'expression': '表情', 'pose': '姿勢',
+      'border': '外框', 'level': '等級'
+    } %}
     {% if snap %}
-    <div class="flex flex-col gap-2">
-      <span class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)]">角色屬性</span>
+    <div class="flex flex-col gap-1.5">
+      <span class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)] mb-1">角色屬性</span>
       {% for key, value in snap.items() %}
-      <div class="flex items-center gap-2">
-        <span class="font-tc text-xs text-[var(--rpg-text-secondary)] w-16">{{ key }}</span>
-        <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">{{ value }}</span>
+      <div class="grid grid-cols-[6rem_1fr] items-baseline gap-x-2">
+        <span class="font-tc text-xs text-[var(--rpg-text-secondary)] truncate">{{ attr_labels.get(key, key) }}</span>
+        <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)] break-all">{{ value }}</span>
       </div>
       {% endfor %}
     </div>

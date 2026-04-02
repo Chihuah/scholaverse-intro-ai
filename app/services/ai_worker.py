@@ -13,7 +13,8 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-WEB_SERVER_CALLBACK_URL = "http://192.168.50.111/api/internal/generation-callback"
+def _callback_url() -> str:
+    return f"{settings.WEB_SERVER_BASE_URL.rstrip('/')}/api/internal/generation-callback"
 
 
 class AIWorkerService(ABC):
@@ -71,17 +72,21 @@ class RealAIWorkerService(AIWorkerService):
             "job_id": job_id,
             "card_id": card_id,
             "student_id": student_id,
-            "student_nickname": student_nickname,
             "card_config": card_config,
             "learning_data": learning_data,
             "style_hint": "16-bit pixel art, fantasy RPG character card",
-            "callback_url": WEB_SERVER_CALLBACK_URL,
+            "callback_url": _callback_url(),
         }
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.post(
                     f"{self._base_url}/api/generate", json=payload
                 )
+                if resp.status_code >= 400:
+                    logger.error(
+                        "ai-worker returned %d for card %d. payload=%s response=%s",
+                        resp.status_code, card_id, payload, resp.text,
+                    )
                 resp.raise_for_status()
                 return job_id
         except httpx.HTTPError as e:
@@ -134,16 +139,43 @@ class MockAIWorkerService(AIWorkerService):
     async def _simulate_generation(self, job_id: str, card_id: int) -> None:
         delay = random.uniform(3.0, 5.0)
         await asyncio.sleep(delay)
-        if job_id in self._jobs:
-            self._jobs[job_id].update(
-                {
-                    "status": "completed",
-                    "image_path": f"/students/{card_id}/cards/card_{card_id:03d}.png",
-                    "thumbnail_path": f"/students/{card_id}/cards/card_{card_id:03d}_thumb.png",
-                    "generated_at": datetime.now(timezone.utc).isoformat(),
-                }
-            )
-            logger.info("Mock ai-worker: job %s completed", job_id)
+        if job_id not in self._jobs:
+            return
+        generated_at = datetime.now(timezone.utc).isoformat()
+        # Use local static placeholder so dev environment can display the image
+        _placeholders = [
+            "card-copper-1.png",
+            "card-silver-1.png",
+            "card-silver-2.png",
+            "card-gold-1.png",
+        ]
+        _filename = _placeholders[card_id % len(_placeholders)]
+        image_path = f"/static/images/placeholder/{_filename}"
+        thumbnail_path = image_path
+        self._jobs[job_id].update(
+            {
+                "status": "completed",
+                "image_path": image_path,
+                "thumbnail_path": thumbnail_path,
+                "generated_at": generated_at,
+            }
+        )
+        logger.info("Mock ai-worker: job %s completed, firing callback", job_id)
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                await client.post(
+                    _callback_url(),
+                    json={
+                        "job_id": job_id,
+                        "card_id": card_id,
+                        "status": "completed",
+                        "image_path": image_path,
+                        "thumbnail_path": thumbnail_path,
+                        "generated_at": generated_at,
+                    },
+                )
+        except httpx.HTTPError as e:
+            logger.error("Mock ai-worker: callback failed for job %s: %s", job_id, e)
 
     async def check_job_status(self, job_id: str) -> dict:
         job = self._jobs.get(job_id)

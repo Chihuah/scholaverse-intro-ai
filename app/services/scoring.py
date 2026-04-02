@@ -393,10 +393,15 @@ def _get_available_options_hardcoded(
     return {}
 
 
-def calculate_card_level(overall_completion: float) -> int:
-    """Map 0-100% overall completion to level 1-10."""
-    clamped = max(0.0, min(100.0, overall_completion))
-    level = math.ceil(clamped / 10)
+def calculate_card_level(total_exp_sum: float) -> int:
+    """Map total EXP sum across 6 units (0–600) to level 1–100.
+
+    Each unit contributes 0–100 EXP (preview×20% + completion×40% + quiz×40%).
+    unit_6 uses completion_rate as full weight.
+    Level = ceil(total / 6), clamped to 1–100.
+    """
+    clamped = max(0.0, min(600.0, total_exp_sum))
+    level = math.ceil(clamped / 6)
     return max(1, level)
 
 

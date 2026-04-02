@@ -22,6 +22,7 @@ class LearningRecord(Base):
         Integer, ForeignKey("units.id"), nullable=False
     )
     preview_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pretest_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     completion_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
     quiz_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     imported_at: Mapped[datetime] = mapped_column(

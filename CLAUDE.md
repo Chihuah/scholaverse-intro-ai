@@ -5,15 +5,15 @@
 教育部教學實踐研究計畫「從學習評分到角色養成：生成式 AI 支持下的遊戲化教學實踐」的配套教學平台。為輔仁大學「人工智慧概論」課程開發，將學生在 5 大學習單元的表現數據，透過評分轉換規則對應為 RPG 角色屬性（種族、職業、裝備、武器、背景），再由 vm-ai-worker 上的 LLM + 文生圖模型產生個性化角色頭像卡牌。
 
 - 網域：app.scholaverse.cc
-- 部署位置：vm-web-server (192.168.50.111)
+- 部署位置：vm-web-server (192.168.60.111)
 - 完整規格書：`docs/system-spec.md`
 
 ## 架構
 
 ```
 使用者 → Cloudflare Zero Trust → vm-web-server (本專案, FastAPI)
-                                    ├→ vm-ai-worker (192.168.50.110) - GPU/LLM/文生圖
-                                    └→ vm-db-storage (192.168.50.112) - 圖片+Metadata
+                                    ├→ vm-ai-worker (192.168.60.110) - GPU/LLM/文生圖
+                                    └→ vm-db-storage (192.168.60.112) - 圖片+Metadata
 ```
 
 - vm-ai-worker 和 vm-db-storage 目前尚未建立，使用 mock/stub 開發

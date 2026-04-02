@@ -101,14 +101,15 @@
     <span class="font-tc text-sm font-bold text-[var(--rpg-text-primary)]">學習記錄</span>
   </div>
   <div class="rounded bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)] overflow-auto scrollbar-hide">
-    <div class="min-w-[560px]">
+    <div class="min-w-[700px]">
       <!-- Header -->
       <div class="flex items-center gap-2 px-5 py-3 bg-[var(--rpg-bg-card)]
                   border-b border-[var(--rpg-gold-dark)] sticky top-0 z-10">
         <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] flex-1">單元</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">預習</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">完成率</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">測驗</span>
+        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">前測成績</span>
+        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">影片預習</span>
+        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">課程完成度</span>
+        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">課後測驗</span>
         <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-14 text-center"></span>
       </div>
       <!-- Rows -->
@@ -121,6 +122,11 @@
           <span class="text-[var(--rpg-gold)] font-bold">{{ unit.code }}</span>
           <span class="text-[var(--rpg-text-secondary)] ml-1">{{ unit.name }}</span>
         </span>
+        <input type="number" step="0.1" min="0" max="100"
+               id="pretest-{{ unit.id }}" value="{{ rec.pretest_score if rec and rec.pretest_score is not none else '' }}"
+               class="w-16 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
+                      font-tc text-[10px] text-[var(--rpg-text-primary)] text-center
+                      focus:outline-none focus:border-[var(--rpg-gold)]">
         <input type="number" step="0.1" min="0" max="100"
                id="preview-{{ unit.id }}" value="{{ rec.preview_score if rec and rec.preview_score is not none else '' }}"
                class="w-16 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
@@ -341,6 +347,7 @@ async function saveRecord(unitId) {
     return el && el.value !== '' ? parseFloat(el.value) : null;
   };
   const payload = {
+    pretest_score: val('pretest-' + unitId),
     preview_score: val('preview-' + unitId),
     completion_rate: val('completion-' + unitId),
     quiz_score: val('quiz-' + unitId),

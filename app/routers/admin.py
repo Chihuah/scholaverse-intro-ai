@@ -8,6 +8,7 @@ import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, UploadFile, File
+from fastapi.responses import HTMLResponse
 from sqlalchemy import case, delete, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +21,12 @@ from app.models.learning_record import LearningRecord
 from app.models.student import Student
 from app.models.token_transaction import TokenTransaction
 from app.models.unit import Unit
+from app.services.excel_import import (
+    ExcelParseResult,
+    StudentRecord,
+    parse_completion_excel,
+    parse_score_excel,
+)
 from app.templating import templates
 
 logger = logging.getLogger(__name__)
@@ -124,20 +131,59 @@ async def admin_students(
     result = await db.execute(query)
     students = result.scalars().all()
 
-    # Get card counts per student
+    student_ids = [s.id for s in students]
+
+    # Units ordered for EXP columns
+    units_result = await db.execute(select(Unit).order_by(Unit.sort_order))
+    units = units_result.scalars().all()
+
+    # Card counts — one query
+    card_counts: dict[int, int] = {}
+    if student_ids:
+        cc_result = await db.execute(
+            select(Card.student_id, func.count(Card.id))
+            .where(Card.student_id.in_(student_ids))
+            .group_by(Card.student_id)
+        )
+        card_counts = {row[0]: row[1] for row in cc_result.all()}
+
+    # Learning records — one query, grouped by student_id → unit_id
+    lr_map: dict[int, dict[int, LearningRecord]] = {}
+    if student_ids:
+        lr_result = await db.execute(
+            select(LearningRecord).where(
+                LearningRecord.student_id.in_(student_ids)
+            )
+        )
+        for lr in lr_result.scalars().all():
+            lr_map.setdefault(lr.student_id, {})[lr.unit_id] = lr
+
+    def _exp(unit: Unit, lr: LearningRecord | None) -> float | None:
+        if lr is None:
+            return None
+        if unit.code == "unit_6":
+            return lr.completion_rate  # may be None
+        pv = (lr.preview_score or 0.0) * 0.2
+        cv = (lr.completion_rate or 0.0) * 0.4
+        qv = (lr.quiz_score or 0.0) * 0.4
+        return round(pv + cv + qv, 1)
+
     student_data = []
     for s in students:
-        card_count = (
-            await db.execute(
-                select(func.count(Card.id)).where(Card.student_id == s.id)
-            )
-        ).scalar() or 0
-        student_data.append({"student": s, "card_count": card_count})
+        unit_exps = []
+        for u in units:
+            lr = lr_map.get(s.id, {}).get(u.id)
+            unit_exps.append({"unit": u, "exp": _exp(u, lr)})
+        student_data.append({
+            "student": s,
+            "card_count": card_counts.get(s.id, 0),
+            "unit_exps": unit_exps,
+        })
 
     return templates.TemplateResponse(
         request,
         "admin/students.html",
-        {"user": user, "student_data": student_data, "search_query": q},
+        {"user": user, "student_data": student_data, "search_query": q, "units": units},
     )
 
 
@@ -373,7 +419,7 @@ async def api_admin_update_record(
         existing = LearningRecord(student_id=student_pk, unit_id=unit_id)
         db.add(existing)
 
-    for field in ("preview_score", "completion_rate", "quiz_score"):
+    for field in ("preview_score", "pretest_score", "completion_rate", "quiz_score"):
         if field in payload:
             val = payload[field]
             setattr(existing, field, float(val) if val is not None and val != "" else None)
@@ -387,6 +433,7 @@ async def api_admin_update_record(
         "student_id": existing.student_id,
         "unit_id": existing.unit_id,
         "preview_score": existing.preview_score,
+        "pretest_score": existing.pretest_score,
         "completion_rate": existing.completion_rate,
         "quiz_score": existing.quiz_score,
     }
@@ -665,6 +712,290 @@ async def api_admin_roster(
         "total": created + updated,
         "errors": errors[:20],
     }
+
+
+# ─── Excel Import Endpoints ───────────────────────────────────────────
+
+_MAX_EXCEL_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+def _validate_excel_upload(file: UploadFile) -> None:
+    if not file.filename or not file.filename.lower().endswith(".xlsx"):
+        raise HTTPException(status_code=400, detail="請上傳 .xlsx 格式的 Excel 檔案")
+
+
+def _build_preview_html(
+    parse_result: ExcelParseResult,
+    student_map: dict[str, int],
+    import_type: str,
+) -> str:
+    """Return an HTMX HTML fragment summarising the parse result."""
+    matched_ids: set[str] = set()
+    not_found: list[str] = []
+
+    for rec in parse_result.records:
+        if rec.student_id in student_map:
+            matched_ids.add(rec.student_id)
+        elif rec.student_id not in not_found:
+            not_found.append(rec.student_id)
+
+    will_update = len(matched_ids)
+    not_found_html = ""
+    if not_found:
+        items = "".join(f'<li class="font-mono">{sid}</li>' for sid in not_found[:20])
+        extra = f'<li>…共 {len(not_found)} 筆</li>' if len(not_found) > 20 else ""
+        not_found_html = f"""
+        <div class="mt-2">
+          <p class="text-[var(--rpg-danger)] font-bold mb-1">找不到以下學號：</p>
+          <ul class="text-[var(--rpg-danger)] text-[10px] list-disc list-inside">{items}{extra}</ul>
+        </div>"""
+
+    errors_html = ""
+    if parse_result.parse_errors:
+        items = "".join(f'<li>{e}</li>' for e in parse_result.parse_errors[:10])
+        errors_html = f'<div class="mt-2 text-[var(--rpg-danger)] text-[10px]"><ul class="list-disc list-inside">{items}</ul></div>'
+
+    unrecognized_html = ""
+    if parse_result.unrecognized_headers:
+        cols = ", ".join(parse_result.unrecognized_headers[:10])
+        unrecognized_html = f'<p class="mt-1 text-[10px] text-[var(--rpg-text-secondary)]">略過未識別欄位：{cols}</p>'
+
+    commit_endpoint = (
+        "/api/admin/import-excel/completion/commit"
+        if import_type == "completion"
+        else "/api/admin/import-excel/scores/commit"
+    )
+
+    confirm_btn = ""
+    if will_update > 0:
+        confirm_btn = f"""
+        <form class="mt-3" enctype="multipart/form-data"
+              hx-post="{commit_endpoint}"
+              hx-encoding="multipart/form-data"
+              hx-target="this"
+              hx-swap="outerHTML">
+          <input type="hidden" name="_preview_file_data" value="">
+          <button type="submit"
+                  class="flex items-center gap-2 rounded px-4 py-2
+                         bg-[var(--rpg-gold-dark)] border-2 border-[var(--rpg-gold)]
+                         font-tc text-xs font-bold text-[var(--rpg-gold-bright)]
+                         transition-opacity hover:opacity-90"
+                  onclick="this.closest('form').querySelector('[name=_preview_file_data]').value=window.__excelFile_{import_type} || ''; return true;"
+                  hx-include="closest form">
+            確認匯入
+          </button>
+        </form>"""
+
+    return f"""
+    <div class="rounded bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)] p-4 mt-3">
+      <p class="font-tc text-xs font-bold text-[var(--rpg-gold)] mb-2">預覽摘要</p>
+      <ul class="font-tc text-xs text-[var(--rpg-text-primary)] space-y-1">
+        <li>比對到：<span class="text-[var(--rpg-gold-bright)] font-bold">{will_update}</span> 位學生</li>
+        <li>將更新記錄：<span class="text-[var(--rpg-gold-bright)] font-bold">{len(parse_result.records)}</span> 筆</li>
+        <li>找不到：<span class="text-[var(--rpg-danger)] font-bold">{len(not_found)}</span> 位學生</li>
+      </ul>
+      {not_found_html}
+      {unrecognized_html}
+      {errors_html}
+      {confirm_btn}
+    </div>"""
+
+
+async def _upsert_records(
+    db: AsyncSession,
+    records: list[StudentRecord],
+    student_map: dict[str, int],
+    unit_map: dict[str, int],
+    update_fields: tuple[str, ...],
+) -> tuple[int, int, list[str]]:
+    """Upsert learning records, updating only the specified fields.
+
+    Returns (created, updated, warnings).
+    """
+    created = 0
+    updated = 0
+    warnings: list[str] = []
+    now = datetime.now(timezone.utc)
+
+    for rec in records:
+        student_pk = student_map.get(rec.student_id)
+        if student_pk is None:
+            warnings.append(f"找不到學號 {rec.student_id}，已略過")
+            continue
+
+        unit_pk = unit_map.get(rec.unit_code)
+        if unit_pk is None:
+            warnings.append(f"找不到單元 {rec.unit_code}，已略過")
+            continue
+
+        existing = (
+            await db.execute(
+                select(LearningRecord).where(
+                    LearningRecord.student_id == student_pk,
+                    LearningRecord.unit_id == unit_pk,
+                )
+            )
+        ).scalar_one_or_none()
+
+        if existing is None:
+            kwargs: dict = {"student_id": student_pk, "unit_id": unit_pk}
+            for f in update_fields:
+                v = getattr(rec, f)
+                if v is not None:
+                    kwargs[f] = v
+            lr = LearningRecord(**kwargs)
+            db.add(lr)
+            created += 1
+        else:
+            changed = False
+            for f in update_fields:
+                v = getattr(rec, f)
+                if v is not None:
+                    setattr(existing, f, v)
+                    changed = True
+            if changed:
+                existing.updated_at = now
+            updated += 1
+
+    return created, updated, warnings
+
+
+@router.post("/api/admin/import-excel/completion/preview", response_class=HTMLResponse)
+async def api_excel_completion_preview(
+    request: Request,
+    file: UploadFile = File(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Parse completion Excel and return an HTMX preview fragment."""
+    _validate_excel_upload(file)
+    content = await file.read()
+    if len(content) > _MAX_EXCEL_SIZE:
+        raise HTTPException(status_code=400, detail="檔案超過 5MB 限制")
+
+    parse_result = parse_completion_excel(content)
+
+    students = (await db.execute(select(Student))).scalars().all()
+    student_map = {s.student_id: s.id for s in students}
+
+    return _build_preview_html(parse_result, student_map, "completion")
+
+
+@router.post("/api/admin/import-excel/completion/commit", response_class=HTMLResponse)
+async def api_excel_completion_commit(
+    request: Request,
+    file: UploadFile = File(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Re-parse and commit completion Excel data to the database."""
+    _validate_excel_upload(file)
+    content = await file.read()
+    if len(content) > _MAX_EXCEL_SIZE:
+        raise HTTPException(status_code=400, detail="檔案超過 5MB 限制")
+
+    parse_result = parse_completion_excel(content)
+
+    students = (await db.execute(select(Student))).scalars().all()
+    student_map = {s.student_id: s.id for s in students}
+
+    units = (await db.execute(select(Unit))).scalars().all()
+    unit_map = {u.code: u.id for u in units}
+
+    try:
+        created, updated, warnings = await _upsert_records(
+            db, parse_result.records, student_map, unit_map,
+            update_fields=("completion_rate", "quiz_score"),
+        )
+        await db.commit()
+    except Exception as exc:
+        await db.rollback()
+        logger.exception("Excel completion commit failed")
+        raise HTTPException(status_code=500, detail=f"寫入資料庫失敗：{exc}") from exc
+
+    warn_html = ""
+    if warnings:
+        items = "".join(f"<li>{w}</li>" for w in warnings[:20])
+        warn_html = f'<ul class="mt-2 text-[var(--rpg-danger)] text-[10px] list-disc list-inside">{items}</ul>'
+
+    return f"""
+    <div class="rounded bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold)] p-4 mt-3">
+      <p class="font-tc text-xs font-bold text-[var(--rpg-gold)] mb-2">✓ 匯入完成</p>
+      <ul class="font-tc text-xs text-[var(--rpg-text-primary)] space-y-1">
+        <li>新增：<span class="text-[var(--rpg-gold-bright)] font-bold">{created}</span> 筆</li>
+        <li>更新：<span class="text-[var(--rpg-gold-bright)] font-bold">{updated}</span> 筆</li>
+      </ul>
+      {warn_html}
+    </div>"""
+
+
+@router.post("/api/admin/import-excel/scores/preview", response_class=HTMLResponse)
+async def api_excel_scores_preview(
+    request: Request,
+    file: UploadFile = File(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Parse score-list Excel and return an HTMX preview fragment."""
+    _validate_excel_upload(file)
+    content = await file.read()
+    if len(content) > _MAX_EXCEL_SIZE:
+        raise HTTPException(status_code=400, detail="檔案超過 5MB 限制")
+
+    parse_result = parse_score_excel(content)
+
+    students = (await db.execute(select(Student))).scalars().all()
+    student_map = {s.student_id: s.id for s in students}
+
+    return _build_preview_html(parse_result, student_map, "scores")
+
+
+@router.post("/api/admin/import-excel/scores/commit", response_class=HTMLResponse)
+async def api_excel_scores_commit(
+    request: Request,
+    file: UploadFile = File(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Re-parse and commit score-list Excel data to the database."""
+    _validate_excel_upload(file)
+    content = await file.read()
+    if len(content) > _MAX_EXCEL_SIZE:
+        raise HTTPException(status_code=400, detail="檔案超過 5MB 限制")
+
+    parse_result = parse_score_excel(content)
+
+    students = (await db.execute(select(Student))).scalars().all()
+    student_map = {s.student_id: s.id for s in students}
+
+    units = (await db.execute(select(Unit))).scalars().all()
+    unit_map = {u.code: u.id for u in units}
+
+    try:
+        created, updated, warnings = await _upsert_records(
+            db, parse_result.records, student_map, unit_map,
+            update_fields=("pretest_score", "quiz_score"),
+        )
+        await db.commit()
+    except Exception as exc:
+        await db.rollback()
+        logger.exception("Excel scores commit failed")
+        raise HTTPException(status_code=500, detail=f"寫入資料庫失敗：{exc}") from exc
+
+    warn_html = ""
+    if warnings:
+        items = "".join(f"<li>{w}</li>" for w in warnings[:20])
+        warn_html = f'<ul class="mt-2 text-[var(--rpg-danger)] text-[10px] list-disc list-inside">{items}</ul>'
+
+    return f"""
+    <div class="rounded bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold)] p-4 mt-3">
+      <p class="font-tc text-xs font-bold text-[var(--rpg-gold)] mb-2">✓ 匯入完成</p>
+      <ul class="font-tc text-xs text-[var(--rpg-text-primary)] space-y-1">
+        <li>新增：<span class="text-[var(--rpg-gold-bright)] font-bold">{created}</span> 筆</li>
+        <li>更新：<span class="text-[var(--rpg-gold-bright)] font-bold">{updated}</span> 筆</li>
+      </ul>
+      {warn_html}
+    </div>"""
 
 
 def _parse_float(val: str | None) -> float | None:
