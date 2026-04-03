@@ -9,11 +9,11 @@
     <i data-lucide="user" class="w-6 h-6 text-[var(--rpg-gold)]"></i>
     <h1 class="font-tc text-xl font-black tracking-widest text-[var(--rpg-gold)]">{{ student.name }}</h1>
     {% if student.role in ('teacher', 'admin') %}
-    <span class="inline-block rounded px-2 py-0.5 bg-[var(--rpg-gold-dark)]/50 font-tc text-[10px] font-bold text-[var(--rpg-gold-bright)]">{{ student.role }}</span>
+    <span class="inline-block rounded px-2 py-0.5 bg-[var(--rpg-gold-dark)]/50 font-tc text-sm font-bold text-[var(--rpg-gold-bright)]">{{ student.role }}</span>
     {% endif %}
   </div>
   <a href="/admin/students"
-     class="flex items-center gap-1.5 font-tc text-xs text-[var(--rpg-text-secondary)]
+     class="flex items-center gap-1.5 font-tc text-sm text-[var(--rpg-text-secondary)]
             hover:text-[var(--rpg-gold)] transition-colors">
     <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
     返回列表
@@ -30,41 +30,41 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <!-- Email (read-only) -->
       <div>
-        <label class="font-tc text-[10px] font-bold text-[var(--rpg-text-secondary)] block mb-1">Email</label>
+        <label class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)] block mb-1">Email</label>
         <div class="rounded px-3 py-2.5 bg-[var(--rpg-bg-input)] border-2 border-[var(--rpg-gold-dark)]
-                    font-tc text-xs text-[var(--rpg-text-secondary)] opacity-60">
+                    font-tc text-sm text-[var(--rpg-text-secondary)] opacity-60">
           {{ student.email }}
         </div>
       </div>
       <!-- Name -->
       <div>
-        <label class="font-tc text-[10px] font-bold text-[var(--rpg-text-secondary)] block mb-1" for="field-name">姓名</label>
+        <label class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)] block mb-1" for="field-name">姓名</label>
         <input id="field-name" name="name" type="text" value="{{ student.name }}"
                class="w-full rounded px-3 py-2.5 bg-[var(--rpg-bg-input)] border-2 border-[var(--rpg-gold-dark)]
-                      font-tc text-xs text-[var(--rpg-text-primary)] focus:outline-none focus:border-[var(--rpg-gold)]">
+                      font-tc text-sm text-[var(--rpg-text-primary)] focus:outline-none focus:border-[var(--rpg-gold)]">
       </div>
       <!-- Nickname -->
       <div>
-        <label class="font-tc text-[10px] font-bold text-[var(--rpg-text-secondary)] block mb-1" for="field-nickname">暱稱</label>
+        <label class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)] block mb-1" for="field-nickname">暱稱</label>
         <input id="field-nickname" name="nickname" type="text" value="{{ student.nickname or '' }}"
                placeholder="角色暱稱（英數字，最多18字）" maxlength="18"
                class="w-full rounded px-3 py-2.5 bg-[var(--rpg-bg-input)] border-2 border-[var(--rpg-gold-dark)]
-                      font-tc text-xs text-[var(--rpg-text-primary)] placeholder:text-[var(--rpg-text-secondary)]
+                      font-tc text-sm text-[var(--rpg-text-primary)] placeholder:text-[var(--rpg-text-secondary)]
                       focus:outline-none focus:border-[var(--rpg-gold)]">
       </div>
       <!-- Student ID -->
       <div>
-        <label class="font-tc text-[10px] font-bold text-[var(--rpg-text-secondary)] block mb-1" for="field-student-id">學號</label>
+        <label class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)] block mb-1" for="field-student-id">學號</label>
         <input id="field-student-id" name="student_id" type="text" value="{{ student.student_id or '' }}"
                class="w-full rounded px-3 py-2.5 bg-[var(--rpg-bg-input)] border-2 border-[var(--rpg-gold-dark)]
-                      font-tc text-xs text-[var(--rpg-text-primary)] focus:outline-none focus:border-[var(--rpg-gold)]">
+                      font-tc text-sm text-[var(--rpg-text-primary)] focus:outline-none focus:border-[var(--rpg-gold)]">
       </div>
       <!-- Role -->
       <div>
-        <label class="font-tc text-[10px] font-bold text-[var(--rpg-text-secondary)] block mb-1" for="field-role">角色</label>
+        <label class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)] block mb-1" for="field-role">角色</label>
         <select id="field-role" name="role"
                 class="w-full rounded px-3 py-2.5 bg-[var(--rpg-bg-input)] border-2 border-[var(--rpg-gold-dark)]
-                       font-tc text-xs text-[var(--rpg-text-primary)] focus:outline-none focus:border-[var(--rpg-gold)]">
+                       font-tc text-sm text-[var(--rpg-text-primary)] focus:outline-none focus:border-[var(--rpg-gold)]">
           <option value="student" {{ 'selected' if student.role == 'student' }}>student</option>
           <option value="teacher" {{ 'selected' if student.role == 'teacher' }}>teacher</option>
           <option value="admin" {{ 'selected' if student.role == 'admin' }}>admin</option>
@@ -72,20 +72,20 @@
       </div>
       <!-- Tokens -->
       <div>
-        <label class="font-tc text-[10px] font-bold text-[var(--rpg-text-secondary)] block mb-1" for="field-tokens">代幣</label>
+        <label class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)] block mb-1" for="field-tokens">代幣</label>
         <input id="field-tokens" name="tokens" type="number" value="{{ student.tokens }}" min="0"
                class="w-full rounded px-3 py-2.5 bg-[var(--rpg-bg-input)] border-2 border-[var(--rpg-gold-dark)]
-                      font-tc text-xs text-[var(--rpg-text-primary)] focus:outline-none focus:border-[var(--rpg-gold)]">
+                      font-tc text-sm text-[var(--rpg-text-primary)] focus:outline-none focus:border-[var(--rpg-gold)]">
       </div>
     </div>
     <div class="mt-4 flex items-center justify-between">
-      <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">
+      <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">
         註冊於 {{ student.created_at | format_taipei('%Y-%m-%d') if student.created_at else '—' }}
       </span>
       <button type="button" onclick="saveStudent()"
               class="flex items-center gap-2 rounded px-4 py-2
                      bg-[var(--rpg-gold-dark)] border-2 border-[var(--rpg-gold)]
-                     font-tc text-[10px] font-bold text-[var(--rpg-gold-bright)]
+                     font-tc text-sm font-bold text-[var(--rpg-gold-bright)]
                      transition-opacity hover:opacity-90">
         <i data-lucide="save" class="w-3.5 h-3.5"></i>
         儲存變更
@@ -105,12 +105,12 @@
       <!-- Header -->
       <div class="flex items-center gap-2 px-5 py-3 bg-[var(--rpg-bg-card)]
                   border-b border-[var(--rpg-gold-dark)] sticky top-0 z-10">
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] flex-1">單元</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">前測成績</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">影片預習</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">課程完成度</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-16 text-center">課後測驗</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-14 text-center"></span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] flex-1">單元</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-16 text-center">前測成績</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-16 text-center">影片預習</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-16 text-center">課程完成度</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-16 text-center">課後測驗</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-14 text-center"></span>
       </div>
       <!-- Rows -->
       {% for unit in units %}
@@ -118,33 +118,33 @@
       <div id="record-row-{{ unit.id }}"
            class="flex items-center gap-2 px-5 py-2.5 border-b border-[var(--rpg-bg-input)]
                   {% if loop.index is odd %}bg-[var(--rpg-bg-card)]/20{% endif %}">
-        <span class="font-tc text-[10px] flex-1 whitespace-nowrap">
+        <span class="font-tc text-sm flex-1 whitespace-nowrap">
           <span class="text-[var(--rpg-gold)] font-bold">{{ unit.code }}</span>
           <span class="text-[var(--rpg-text-secondary)] ml-1">{{ unit.name }}</span>
         </span>
         <input type="number" step="0.1" min="0" max="100"
                id="pretest-{{ unit.id }}" value="{{ rec.pretest_score if rec and rec.pretest_score is not none else '' }}"
                class="w-16 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
-                      font-tc text-[10px] text-[var(--rpg-text-primary)] text-center
+                      font-tc text-sm text-[var(--rpg-text-primary)] text-center
                       focus:outline-none focus:border-[var(--rpg-gold)]">
         <input type="number" step="0.1" min="0" max="100"
                id="preview-{{ unit.id }}" value="{{ rec.preview_score if rec and rec.preview_score is not none else '' }}"
                class="w-16 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
-                      font-tc text-[10px] text-[var(--rpg-text-primary)] text-center
+                      font-tc text-sm text-[var(--rpg-text-primary)] text-center
                       focus:outline-none focus:border-[var(--rpg-gold)]">
         <input type="number" step="0.1" min="0" max="100"
                id="completion-{{ unit.id }}" value="{{ rec.completion_rate if rec and rec.completion_rate is not none else '' }}"
                class="w-16 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
-                      font-tc text-[10px] text-[var(--rpg-text-primary)] text-center
+                      font-tc text-sm text-[var(--rpg-text-primary)] text-center
                       focus:outline-none focus:border-[var(--rpg-gold)]">
         <input type="number" step="0.1" min="0" max="100"
                id="quiz-{{ unit.id }}" value="{{ rec.quiz_score if rec and rec.quiz_score is not none else '' }}"
                class="w-16 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
-                      font-tc text-[10px] text-[var(--rpg-text-primary)] text-center
+                      font-tc text-sm text-[var(--rpg-text-primary)] text-center
                       focus:outline-none focus:border-[var(--rpg-gold)]">
         <button type="button" onclick="saveRecord({{ unit.id }})"
                 class="w-14 rounded px-2 py-1.5 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]
-                       font-tc text-[10px] font-bold text-[var(--rpg-gold)]
+                       font-tc text-sm font-bold text-[var(--rpg-gold)]
                        hover:border-[var(--rpg-gold)] transition-colors text-center">
           儲存
         </button>
@@ -165,8 +165,8 @@
     {% for card in cards %}
     <div class="rounded p-4 bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)]">
       <div class="flex justify-between items-start mb-2">
-        <span class="font-tc text-xs font-bold text-[var(--rpg-gold)]">#{{ card.id }}</span>
-        <span class="inline-block rounded px-1.5 py-0.5 font-tc text-[10px] font-bold
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)]">#{{ card.id }}</span>
+        <span class="inline-block rounded px-1.5 py-0.5 font-tc text-sm font-bold
           {% if card.status == 'completed' %}bg-[var(--rpg-success)]/20 text-[var(--rpg-success)]
           {% elif card.status == 'generating' %}bg-[var(--rpg-warning)]/20 text-[var(--rpg-warning)]
           {% elif card.status == 'failed' %}bg-[var(--rpg-danger)]/20 text-[var(--rpg-danger)]
@@ -174,19 +174,19 @@
           {{ card.status }}
         </span>
       </div>
-      <p class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">
+      <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">
         {{ card.created_at | format_taipei('%Y-%m-%d %H:%M') if card.created_at else '—' }}
         {% if card.is_latest %}<span class="text-[var(--rpg-gold)] ml-1">★ latest</span>{% endif %}
       </p>
       {% if card.border_style %}
-      <p class="font-tc text-[10px] text-[var(--rpg-text-secondary)] mt-1">Border: {{ card.border_style }} ・ Lv.{{ card.level_number or '?' }}</p>
+      <p class="font-tc text-sm text-[var(--rpg-text-secondary)] mt-1">Border: {{ card.border_style }} ・ Lv.{{ card.level_number or '?' }}</p>
       {% endif %}
     </div>
     {% endfor %}
   </div>
   {% else %}
   <div class="rounded px-5 py-6 bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)] text-center">
-    <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">尚無卡牌。</p>
+    <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">尚無卡牌。</p>
   </div>
   {% endif %}
 </div>
@@ -202,38 +202,38 @@
     <div class="min-w-[480px]">
       <!-- Header -->
       <div class="flex items-center gap-4 px-5 py-3 bg-[var(--rpg-bg-card)] border-b border-[var(--rpg-gold-dark)] sticky top-0 z-10">
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-36 shrink-0">時間</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-20 text-center shrink-0">點數變動</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] flex-1">說明</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-36 shrink-0">時間</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-20 text-center shrink-0">點數變動</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] flex-1">說明</span>
       </div>
       {% for txn in token_transactions %}
       <div class="flex items-center gap-4 px-5 py-3 border-b border-[var(--rpg-bg-input)]
                   {% if loop.index is odd %}bg-[var(--rpg-bg-card)]/20{% endif %}">
-        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)] w-36 shrink-0 tabular-nums">
+        <span class="font-tc text-sm text-[var(--rpg-text-secondary)] w-36 shrink-0 tabular-nums">
           {{ txn.created_at | format_taipei('%Y-%m-%d %H:%M') if txn.created_at else '—' }}
         </span>
         <div class="w-20 shrink-0 flex justify-center">
           {% if txn.amount > 0 %}
           <span class="inline-flex items-center gap-0.5 rounded px-2 py-0.5
                        bg-[var(--rpg-success)]/15 border border-[var(--rpg-success)]/40
-                       font-tc text-[11px] font-bold text-[var(--rpg-success)]">
+                       font-tc text-sm font-bold text-[var(--rpg-success)]">
             +{{ txn.amount }}
           </span>
           {% elif txn.amount < 0 %}
           <span class="inline-flex items-center gap-0.5 rounded px-2 py-0.5
                        bg-[var(--rpg-danger)]/15 border border-[var(--rpg-danger)]/40
-                       font-tc text-[11px] font-bold text-[var(--rpg-danger)]">
+                       font-tc text-sm font-bold text-[var(--rpg-danger)]">
             {{ txn.amount }}
           </span>
           {% else %}
           <span class="inline-flex items-center gap-0.5 rounded px-2 py-0.5
                        bg-[var(--rpg-bg-input)] border border-[#444]
-                       font-tc text-[11px] font-bold text-[var(--rpg-text-secondary)]">
+                       font-tc text-sm font-bold text-[var(--rpg-text-secondary)]">
             ±0
           </span>
           {% endif %}
         </div>
-        <span class="font-tc text-[11px] text-[var(--rpg-text-primary)] flex-1">
+        <span class="font-tc text-sm text-[var(--rpg-text-primary)] flex-1">
           {{ txn.reason or '—' }}
         </span>
       </div>
@@ -242,7 +242,7 @@
   </div>
   {% else %}
   <div class="rounded px-5 py-6 bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)] text-center">
-    <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">尚無點數異動紀錄。</p>
+    <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">尚無點數異動紀錄。</p>
   </div>
   {% endif %}
 </div>
@@ -269,15 +269,15 @@
         <i data-lucide="lock" class="w-4 h-4 text-[var(--rpg-text-secondary)] shrink-0"></i>
         {% endif %}
         <div class="flex flex-col min-w-0">
-          <span class="font-tc text-[10px] font-bold {% if ach %}text-[var(--rpg-gold-bright)]{% else %}text-[var(--rpg-text-secondary)]{% endif %} truncate">
+          <span class="font-tc text-sm font-bold {% if ach %}text-[var(--rpg-gold-bright)]{% else %}text-[var(--rpg-text-secondary)]{% endif %} truncate">
             {{ info.label }}
           </span>
           {% if ach %}
-          <span class="font-tc text-[9px] text-[var(--rpg-text-secondary)]">
+          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">
             {{ ach.awarded_at | format_taipei('%Y-%m-%d') }}
           </span>
           {% else %}
-          <span class="font-tc text-[9px] text-[var(--rpg-text-secondary)]">+{{ info.tokens }} 點</span>
+          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">+{{ info.tokens }} 點</span>
           {% endif %}
         </div>
       </div>
@@ -292,13 +292,13 @@
     <i data-lucide="alert-triangle" class="w-4 h-4 text-[var(--rpg-danger)]"></i>
     <span class="font-tc text-sm font-bold text-[var(--rpg-danger)]">危險區域</span>
   </div>
-  <p class="font-tc text-xs text-[var(--rpg-text-secondary)] mb-4">
+  <p class="font-tc text-sm text-[var(--rpg-text-secondary)] mb-4">
     解除此帳號的 Email 綁定後，該 Gmail 帳號下次登入將需要重新自助註冊。學生的學習記錄與卡牌資料將會保留。
   </p>
   <button type="button" onclick="unbindStudent()"
           class="flex items-center gap-2 rounded px-4 py-2
                  bg-[var(--rpg-danger)]/20 border-2 border-[var(--rpg-danger)]/60
-                 font-tc text-[10px] font-bold text-[var(--rpg-danger)]
+                 font-tc text-sm font-bold text-[var(--rpg-danger)]
                  transition-opacity hover:opacity-90">
     <i data-lucide="unlink" class="w-3.5 h-3.5"></i>
     解除綁定
@@ -313,7 +313,7 @@ const STUDENT_ID = {{ student.id }};
 function showToast(msg, type) {
   // Simple toast - create a temporary notification
   const toast = document.createElement('div');
-  toast.className = 'fixed bottom-4 right-4 z-50 rounded px-4 py-3 font-tc text-xs font-bold transition-opacity ' +
+  toast.className = 'fixed bottom-4 right-4 z-50 rounded px-4 py-3 font-tc text-sm font-bold transition-opacity ' +
     (type === 'success' ? 'bg-[var(--rpg-success)]/20 border border-[var(--rpg-success)] text-[var(--rpg-success)]' :
      'bg-[var(--rpg-danger)]/20 border border-[var(--rpg-danger)] text-[var(--rpg-danger)]');
   toast.textContent = msg;

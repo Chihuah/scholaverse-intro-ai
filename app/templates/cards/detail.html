@@ -4,7 +4,7 @@
 
 {% block content %}
 <!-- Back button -->
-<a href="/cards" class="flex items-center gap-1.5 font-tc text-xs text-[var(--rpg-text-secondary)] hover:text-[var(--rpg-gold)] shrink-0">
+<a href="/cards" class="flex items-center gap-1.5 font-tc text-sm text-[var(--rpg-text-secondary)] hover:text-[var(--rpg-gold)] shrink-0">
   <i data-lucide="arrow-left" class="w-4 h-4"></i>返回卡牌收藏
 </a>
 
@@ -29,8 +29,8 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
           </svg>
-          <span id="gen-status-text" class="font-tc text-[10px] text-[var(--rpg-text-secondary)] text-center px-2">AI 生成中…<br>請稍候</span>
-          <span id="gen-queue-info" class="font-tc text-[10px] text-[var(--rpg-gold)] text-center px-2 hidden"></span>
+          <span id="gen-status-text" class="font-tc text-sm text-[var(--rpg-text-secondary)] text-center px-2">AI 生成中…<br>請稍候</span>
+          <span id="gen-queue-info" class="font-tc text-sm text-[var(--rpg-gold)] text-center px-2 hidden"></span>
         </div>
         {% else %}
         <img id="card-img" src="/static/images/placeholder/card-gold-1.png" alt="卡牌" class="w-full h-full object-cover">
@@ -46,7 +46,7 @@
       <h1 class="font-pixel text-sm text-[var(--rpg-gold)]">
         Lv.{{ card.level_number }} 角色卡牌
       </h1>
-      <p class="font-tc text-xs text-[var(--rpg-text-secondary)] mt-1">
+      <p class="font-tc text-sm text-[var(--rpg-text-secondary)] mt-1">
         生成時間：{{ card.created_at | format_taipei('%Y-%m-%d %H:%M') if card.created_at else '--' }}
       </p>
     </div>
@@ -61,11 +61,11 @@
     } %}
     {% if snap %}
     <div class="flex flex-col gap-1.5">
-      <span class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)] mb-1">角色屬性</span>
+      <span class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)] mb-1">角色屬性</span>
       {% for key, value in snap.items() %}
       <div class="grid grid-cols-[6rem_1fr] items-baseline gap-x-2">
-        <span class="font-tc text-xs text-[var(--rpg-text-secondary)] truncate">{{ attr_labels.get(key, key) }}</span>
-        <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)] break-all">{{ value }}</span>
+        <span class="font-tc text-sm text-[var(--rpg-text-secondary)] truncate">{{ attr_labels.get(key, key) }}</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-text-primary)] break-all">{{ value }}</span>
       </div>
       {% endfor %}
     </div>
@@ -79,7 +79,7 @@
       <div class="flex items-center gap-1.5 px-3 py-1.5 rounded
                   bg-[var(--rpg-gold-dark)]/30 border border-[var(--rpg-gold)]">
         <i data-lucide="castle" class="w-3.5 h-3.5 text-[var(--rpg-gold)]"></i>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)]">目前大廳展示中</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)]">目前大廳展示中</span>
       </div>
       {% else %}
       <button id="btn-set-display"
@@ -87,7 +87,7 @@
               class="flex items-center gap-1.5 px-3 py-1.5 rounded cursor-pointer
                      bg-[var(--rpg-bg-panel)] border border-[var(--rpg-gold-dark)]
                      hover:border-[var(--rpg-gold)] hover:text-[var(--rpg-gold)]
-                     transition-colors font-tc text-[10px] font-bold text-[var(--rpg-text-secondary)]">
+                     transition-colors font-tc text-sm font-bold text-[var(--rpg-text-secondary)]">
         <i data-lucide="castle" class="w-3.5 h-3.5"></i>
         設為大廳展示
       </button>
@@ -98,7 +98,7 @@
               class="flex items-center gap-1.5 px-3 py-1.5 rounded cursor-pointer
                      bg-[var(--rpg-bg-panel)] border border-red-800
                      hover:border-red-500 hover:text-red-400
-                     transition-colors font-tc text-[10px] font-bold text-red-600">
+                     transition-colors font-tc text-sm font-bold text-red-600">
         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
         刪除卡牌
       </button>
@@ -110,7 +110,7 @@
       {% set border_labels = {'copper': '銅色邊框', 'silver': '銀色邊框', 'gold': '金色邊框'} %}
       <i data-lucide="{% if card.border_style == 'gold' %}crown{% else %}shield{% endif %}"
          class="w-4 h-4" style="color: {{ bc }}"></i>
-      <span class="font-tc text-xs font-bold" style="color: {{ bc }}">
+      <span class="font-tc text-sm font-bold" style="color: {{ bc }}">
         {{ border_labels.get(card.border_style, '銅色邊框') }}
       </span>
     </div>
@@ -121,7 +121,7 @@
 <!-- Card not found -->
 <div class="flex flex-col items-center gap-3 py-16 text-center">
   <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">找不到此卡牌</p>
-  <a href="/cards" class="font-tc text-xs text-[var(--rpg-gold)] hover:underline">返回卡牌收藏</a>
+  <a href="/cards" class="font-tc text-sm text-[var(--rpg-gold)] hover:underline">返回卡牌收藏</a>
 </div>
 {% endif %}
 
@@ -177,7 +177,7 @@
         sessionStorage.removeItem('generating');
         const spinner = document.getElementById('card-generating');
         if (spinner) {
-          spinner.innerHTML = '<span class="font-tc text-[10px] text-[var(--rpg-danger)] text-center px-2">生成失敗<br>請重試</span>';
+          spinner.innerHTML = '<span class="font-tc text-sm text-[var(--rpg-danger)] text-center px-2">生成失敗<br>請重試</span>';
         }
       }
     } catch (e) {
@@ -202,7 +202,7 @@
     <div class="flex items-center gap-2 px-4 py-3 border-b border-[var(--rpg-gold-dark)]
                 bg-[var(--rpg-bg-dark)]">
       <i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-400"></i>
-      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)]">移除卡牌確認</span>
+      <span class="font-tc text-sm font-bold text-[var(--rpg-gold)]">移除卡牌確認</span>
     </div>
     <!-- Modal body -->
     <div class="flex gap-4 px-4 py-4">
@@ -213,14 +213,14 @@
            style="border: 2px solid {{ bc }};">
       {% endif %}
       <div class="flex flex-col justify-center gap-1.5">
-        <p class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">
+        <p class="font-tc text-sm font-bold text-[var(--rpg-text-primary)]">
           確定要移除此卡牌嗎？
         </p>
-        <p class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">
+        <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">
           Lv.{{ card.level_number }}
           {{ (card.config_snapshot | fromjson).get("class", "未知职業") }}
         </p>
-        <p class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">
+        <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">
           移除後將不再顯示於你的收藏頁面。
         </p>
       </div>
@@ -229,13 +229,13 @@
     <div class="flex gap-2 px-4 py-3 border-t border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-dark)]">
       <button onclick="closeDeleteModal()"
               class="flex-1 py-2 rounded border border-[var(--rpg-gold-dark)]
-                     font-tc text-[10px] font-bold text-[var(--rpg-text-secondary)]
+                     font-tc text-sm font-bold text-[var(--rpg-text-secondary)]
                      hover:border-[var(--rpg-gold)] hover:text-[var(--rpg-gold)] cursor-pointer">
         取消
       </button>
       <button id="btn-confirm-delete" onclick="confirmDelete()"
               class="flex-1 py-2 rounded border border-red-700
-                     font-tc text-[10px] font-bold text-red-500
+                     font-tc text-sm font-bold text-red-500
                      hover:border-red-400 hover:text-red-300 cursor-pointer">
         確認移除
       </button>
@@ -256,7 +256,7 @@
         if (btn) {
           const d = document.createElement('div');
           d.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--rpg-gold-dark)]/30 border border-[var(--rpg-gold)]';
-          d.innerHTML = '<i data-lucide="castle" class="w-3.5 h-3.5 text-[var(--rpg-gold)]"></i><span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)]">目前大廳展示中</span>';
+          d.innerHTML = '<i data-lucide="castle" class="w-3.5 h-3.5 text-[var(--rpg-gold)]"></i><span class="font-tc text-sm font-bold text-[var(--rpg-gold)]">目前大廳展示中</span>';
           btn.replaceWith(d);
           if (window.lucide) lucide.createIcons();
         }

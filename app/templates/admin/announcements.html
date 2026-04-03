@@ -13,7 +13,7 @@
     <button onclick="showCreateForm()"
             class="flex items-center gap-2 px-4 py-2 rounded
                    border border-[var(--rpg-gold)] text-[var(--rpg-gold)]
-                   hover:bg-[var(--rpg-gold)]/10 font-tc text-xs font-bold transition-colors">
+                   hover:bg-[var(--rpg-gold)]/10 font-tc text-sm font-bold transition-colors">
       <i data-lucide="plus" class="w-4 h-4"></i>
       新增公告
     </button>
@@ -24,7 +24,7 @@
        class="hidden rounded-lg border border-[var(--rpg-gold)] bg-[var(--rpg-bg-panel)] p-5 flex flex-col gap-4">
     <h2 class="font-tc text-sm font-black text-[var(--rpg-gold)]">新增公告</h2>
     <div class="flex flex-col gap-1">
-      <label class="font-tc text-xs text-[var(--rpg-text-secondary)]">標題</label>
+      <label class="font-tc text-sm text-[var(--rpg-text-secondary)]">標題</label>
       <input id="create-title" type="text" maxlength="200"
              placeholder="公告標題"
              class="w-full rounded px-3 py-2 font-tc text-sm
@@ -33,7 +33,7 @@
                     focus:outline-none focus:border-[var(--rpg-gold)]">
     </div>
     <div class="flex flex-col gap-1">
-      <label class="font-tc text-xs text-[var(--rpg-text-secondary)]">內容</label>
+      <label class="font-tc text-sm text-[var(--rpg-text-secondary)]">內容</label>
       <textarea id="create-content" rows="6"
                 placeholder="公告內容…"
                 class="w-full rounded px-3 py-2 font-tc text-sm resize-y
@@ -44,20 +44,20 @@
     <div class="flex items-center gap-2">
       <input id="create-published" type="checkbox" checked
              class="w-4 h-4 accent-[var(--rpg-gold)]">
-      <label for="create-published" class="font-tc text-xs text-[var(--rpg-text-secondary)]">
+      <label for="create-published" class="font-tc text-sm text-[var(--rpg-text-secondary)]">
         立即發佈
       </label>
     </div>
-    <div id="create-error" class="hidden font-tc text-xs text-[var(--rpg-danger)]"></div>
+    <div id="create-error" class="hidden font-tc text-sm text-[var(--rpg-danger)]"></div>
     <div class="flex items-center gap-3">
       <button onclick="submitCreate()"
-              class="px-5 py-2 rounded font-tc text-xs font-bold transition-colors
+              class="px-5 py-2 rounded font-tc text-sm font-bold transition-colors
                      bg-[var(--rpg-gold)] text-[var(--rpg-bg-dark)]
                      hover:bg-[var(--rpg-gold-bright)]">
         儲存
       </button>
       <button onclick="hideCreateForm()"
-              class="px-5 py-2 rounded font-tc text-xs font-bold transition-colors
+              class="px-5 py-2 rounded font-tc text-sm font-bold transition-colors
                      border border-[var(--rpg-gold-dark)] text-[var(--rpg-text-secondary)]
                      hover:text-[var(--rpg-gold)] hover:border-[var(--rpg-gold)]">
         取消
@@ -83,7 +83,7 @@
       <!-- Summary Row -->
       <div class="flex items-center gap-3 px-4 py-3 flex-wrap">
         <!-- Published badge -->
-        <span class="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-pixel
+        <span class="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-sm font-pixel
                      {% if ann.is_published %}
                        bg-[var(--rpg-success)]/20 text-[var(--rpg-success)] border border-[var(--rpg-success)]/40
                      {% else %}
@@ -97,11 +97,11 @@
         </span>
         <!-- Meta: read count + date -->
         <div class="flex items-center gap-3 shrink-0">
-          <span class="flex items-center gap-1 font-tc text-[11px] text-[var(--rpg-text-secondary)]">
+          <span class="flex items-center gap-1 font-tc text-sm text-[var(--rpg-text-secondary)]">
             <i data-lucide="eye" class="w-3.5 h-3.5"></i>
             {{ item.read_count }} 人已讀
           </span>
-          <span class="font-tc text-[11px] text-[var(--rpg-text-secondary)]">
+          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">
             {{ ann.created_at | format_taipei('%Y/%m/%d %H:%M') }}
           </span>
           <!-- Edit button -->
@@ -125,7 +125,7 @@
       <div id="edit-form-{{ ann.id }}"
            class="hidden border-t border-[var(--rpg-gold-dark)]/40 px-4 py-4 flex flex-col gap-3">
         <div class="flex flex-col gap-1">
-          <label class="font-tc text-xs text-[var(--rpg-text-secondary)]">標題</label>
+          <label class="font-tc text-sm text-[var(--rpg-text-secondary)]">標題</label>
           <input id="edit-title-{{ ann.id }}" type="text" maxlength="200"
                  value="{{ ann.title | e }}"
                  class="w-full rounded px-3 py-2 font-tc text-sm
@@ -134,7 +134,7 @@
                         focus:outline-none focus:border-[var(--rpg-gold)]">
         </div>
         <div class="flex flex-col gap-1">
-          <label class="font-tc text-xs text-[var(--rpg-text-secondary)]">內容</label>
+          <label class="font-tc text-sm text-[var(--rpg-text-secondary)]">內容</label>
           <textarea id="edit-content-{{ ann.id }}" rows="6"
                     class="w-full rounded px-3 py-2 font-tc text-sm resize-y
                            bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
@@ -145,18 +145,18 @@
           <input id="edit-published-{{ ann.id }}" type="checkbox"
                  {% if ann.is_published %}checked{% endif %}
                  class="w-4 h-4 accent-[var(--rpg-gold)]">
-          <label class="font-tc text-xs text-[var(--rpg-text-secondary)]">發佈</label>
+          <label class="font-tc text-sm text-[var(--rpg-text-secondary)]">發佈</label>
         </div>
-        <div id="edit-error-{{ ann.id }}" class="hidden font-tc text-xs text-[var(--rpg-danger)]"></div>
+        <div id="edit-error-{{ ann.id }}" class="hidden font-tc text-sm text-[var(--rpg-danger)]"></div>
         <div class="flex items-center gap-3">
           <button onclick="submitEdit({{ ann.id }})"
-                  class="px-5 py-2 rounded font-tc text-xs font-bold transition-colors
+                  class="px-5 py-2 rounded font-tc text-sm font-bold transition-colors
                          bg-[var(--rpg-gold)] text-[var(--rpg-bg-dark)]
                          hover:bg-[var(--rpg-gold-bright)]">
             儲存
           </button>
           <button onclick="toggleEditForm({{ ann.id }})"
-                  class="px-5 py-2 rounded font-tc text-xs font-bold transition-colors
+                  class="px-5 py-2 rounded font-tc text-sm font-bold transition-colors
                          border border-[var(--rpg-gold-dark)] text-[var(--rpg-text-secondary)]
                          hover:text-[var(--rpg-gold)] hover:border-[var(--rpg-gold)]">
             取消

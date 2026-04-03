@@ -10,7 +10,7 @@
     <h1 class="font-tc text-xl font-black tracking-widest text-[var(--rpg-gold)]">學生列表</h1>
   </div>
   <a href="/admin"
-     class="flex items-center gap-1.5 font-tc text-xs text-[var(--rpg-text-secondary)]
+     class="flex items-center gap-1.5 font-tc text-sm text-[var(--rpg-text-secondary)]
             hover:text-[var(--rpg-gold)] transition-colors">
     <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
     返回後台
@@ -26,14 +26,14 @@
              placeholder="搜尋學號或姓名..."
              class="w-full rounded pl-9 pr-3 py-2.5
                     bg-[var(--rpg-bg-input)] border-2 border-[var(--rpg-gold-dark)]
-                    font-tc text-xs text-[var(--rpg-text-primary)]
+                    font-tc text-sm text-[var(--rpg-text-primary)]
                     placeholder:text-[var(--rpg-text-secondary)]
                     focus:outline-none focus:border-[var(--rpg-gold)]">
     </div>
     <button type="submit"
             class="flex items-center gap-2 rounded px-4 py-2
                    bg-[var(--rpg-gold-dark)] border-2 border-[var(--rpg-gold)]
-                   font-tc text-[10px] font-bold text-[var(--rpg-gold-bright)]
+                   font-tc text-sm font-bold text-[var(--rpg-gold-bright)]
                    transition-opacity hover:opacity-90">
       搜尋
     </button>
@@ -47,35 +47,35 @@
   <!-- Row 1: count + amount + grant + cancel -->
   <div class="flex items-center gap-3 flex-wrap">
     <i data-lucide="coins" class="w-4 h-4 text-[var(--rpg-gold)] shrink-0"></i>
-    <span id="sel-count" class="font-tc text-[10px] text-[var(--rpg-gold)] shrink-0">已選 0 人</span>
+    <span id="sel-count" class="font-tc text-sm text-[var(--rpg-gold)] shrink-0">已選 0 人</span>
     <div class="flex items-center gap-2">
-      <label class="font-tc text-[10px] text-[var(--rpg-text-secondary)] shrink-0">發放點數</label>
+      <label class="font-tc text-sm text-[var(--rpg-text-secondary)] shrink-0">發放點數</label>
       <input id="token-amount" type="number" min="1" max="9999" value="5" placeholder="點數"
              class="w-24 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
-                    font-tc text-[10px] text-[var(--rpg-text-primary)] text-center
+                    font-tc text-sm text-[var(--rpg-text-primary)] text-center
                     focus:outline-none focus:border-[var(--rpg-gold)]">
-      <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">點</span>
+      <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">點</span>
     </div>
     <button onclick="batchGrantTokens()"
             class="flex items-center gap-1.5 rounded px-3 py-1.5
                    bg-[var(--rpg-gold-dark)] border border-[var(--rpg-gold)]
-                   font-tc text-[10px] font-bold text-[var(--rpg-gold-bright)]
+                   font-tc text-sm font-bold text-[var(--rpg-gold-bright)]
                    transition-opacity hover:opacity-90 shrink-0">
       <i data-lucide="gift" class="w-3 h-3"></i>
       批次發放
     </button>
     <button onclick="clearSelection()"
-            class="font-tc text-[10px] text-[var(--rpg-text-secondary)] hover:text-[var(--rpg-gold)] shrink-0">
+            class="font-tc text-sm text-[var(--rpg-text-secondary)] hover:text-[var(--rpg-gold)] shrink-0">
       取消
     </button>
   </div>
   <!-- Row 2: achievement selector -->
   <div class="flex items-center gap-2 flex-wrap">
     <i data-lucide="trophy" class="w-3.5 h-3.5 text-[var(--rpg-gold)] shrink-0"></i>
-    <label class="font-tc text-[10px] text-[var(--rpg-text-secondary)] shrink-0">對應成就</label>
+    <label class="font-tc text-sm text-[var(--rpg-text-secondary)] shrink-0">對應成就</label>
     <select id="achievement-key"
             class="flex-1 min-w-[200px] rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
-                   font-tc text-[10px] text-[var(--rpg-text-primary)]
+                   font-tc text-sm text-[var(--rpg-text-primary)]
                    focus:outline-none focus:border-[var(--rpg-gold)]">
       <option value="">— 無對應成就（自由發放）—</option>
       <optgroup label="一次性成就">
@@ -99,17 +99,17 @@
         <option value="chapter_5_pretest">完成第5章前測 (+10)</option>
       </optgroup>
     </select>
-    <span class="font-tc text-[9px] text-[var(--rpg-text-secondary)] opacity-60">
+    <span class="font-tc text-sm text-[var(--rpg-text-secondary)] opacity-60">
       ※ 已解鎖成就的學生將自動跳過
     </span>
   </div>
   <!-- Row 3: note -->
   <div class="flex items-center gap-2">
     <i data-lucide="pencil-line" class="w-3.5 h-3.5 text-[var(--rpg-text-secondary)] shrink-0"></i>
-    <label class="font-tc text-[10px] text-[var(--rpg-text-secondary)] shrink-0">發放備註</label>
+    <label class="font-tc text-sm text-[var(--rpg-text-secondary)] shrink-0">發放備註</label>
     <input id="token-note" type="text" maxlength="100" placeholder="填寫發放原因或說明（選填）"
            class="flex-1 rounded px-2 py-1.5 bg-[var(--rpg-bg-input)] border border-[var(--rpg-gold-dark)]
-                  font-tc text-[10px] text-[var(--rpg-text-primary)]
+                  font-tc text-sm text-[var(--rpg-text-primary)]
                   placeholder:text-[var(--rpg-text-secondary)] placeholder:opacity-50
                   focus:outline-none focus:border-[var(--rpg-gold)]">
   </div>
@@ -125,17 +125,17 @@
                   border-b border-[var(--rpg-gold-dark)] sticky top-0 z-10">
         <input type="checkbox" id="check-all" onchange="toggleAll(this)"
                class="w-3.5 h-3.5 rounded accent-[var(--rpg-gold)] cursor-pointer shrink-0">
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-20">學號</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-20">姓名</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] flex-1">Email</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-12 text-center">角色</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-10 text-center">代幣</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-10 text-center">卡牌</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-20">學號</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-20">姓名</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] flex-1">Email</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-12 text-center">角色</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-10 text-center">代幣</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-10 text-center">卡牌</span>
         {% for u in units %}
-        <span class="font-tc text-[9px] font-bold text-[var(--rpg-gold)] w-10 text-center"
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-10 text-center"
               title="{{ u.name }}">Ch{{ loop.index }}</span>
         {% endfor %}
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-10 text-center"></span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-10 text-center"></span>
       </div>
       <!-- Data rows -->
       {% if student_data %}
@@ -146,14 +146,14 @@
            id="row-{{ item.student.id }}">
         <input type="checkbox" class="student-check w-3.5 h-3.5 rounded accent-[var(--rpg-gold)] cursor-pointer shrink-0"
                value="{{ item.student.id }}" onchange="updateSelection()">
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold)] w-20">{{ item.student.student_id or '—' }}</span>
-        <span class="font-tc text-[10px] font-bold text-[var(--rpg-text-primary)] w-20">{{ item.student.name }}</span>
-        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)] flex-1 truncate">
+        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-20">{{ item.student.student_id or '—' }}</span>
+        <span class="font-tc text-sm font-bold text-[var(--rpg-text-primary)] w-20">{{ item.student.name }}</span>
+        <span class="font-tc text-sm text-[var(--rpg-text-secondary)] flex-1 truncate">
           {% if item.student.email.startswith('__unbound__') %}
           <span class="italic">未綁定</span>
           {% else %}{{ item.student.email }}{% endif %}
         </span>
-        <span class="font-tc text-[10px] w-12 text-center">
+        <span class="font-tc text-sm w-12 text-center">
           {% if item.student.role in ('teacher', 'admin') %}
           <span class="inline-block rounded px-1.5 py-0.5 bg-[var(--rpg-gold-dark)]/50 text-[var(--rpg-gold-bright)]">{{ item.student.role }}</span>
           {% else %}
@@ -161,29 +161,29 @@
           {% endif %}
         </span>
         <div class="flex items-center gap-1 w-10 justify-center" id="tokens-{{ item.student.id }}">
-          <span class="font-tc text-[10px] font-bold text-[var(--rpg-gold-bright)]">{{ item.student.tokens }}</span>
+          <span class="font-tc text-sm font-bold text-[var(--rpg-gold-bright)]">{{ item.student.tokens }}</span>
         </div>
-        <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] w-10 text-center">{{ item.card_count }}</span>
+        <span class="font-tc text-sm text-[var(--rpg-text-primary)] w-10 text-center">{{ item.card_count }}</span>
         {% for ue in item.unit_exps %}
         {% set exp = ue.exp %}
         {% if exp is none %}
-        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)] w-10 text-center">—</span>
+        <span class="font-tc text-sm text-[var(--rpg-text-secondary)] w-10 text-center">—</span>
         {% else %}
         {% set tier_color = "#d4a847" if exp >= 90 else ("#4ade80" if exp >= 80 else ("#60a5fa" if exp >= 70 else ("#f59e0b" if exp >= 60 else "#f87171"))) %}
-        <span class="font-pixel text-[9px] w-10 text-center font-bold"
+        <span class="font-pixel text-sm w-10 text-center font-bold"
               style="color: {{ tier_color }}"
               title="{{ ue.unit.name }}：{{ exp }} EXP">{{ exp | int }}</span>
         {% endif %}
         {% endfor %}
         <a href="/admin/students/{{ item.student.id }}"
-           class="w-10 text-center font-tc text-[10px] text-[var(--rpg-gold)] hover:text-[var(--rpg-gold-bright)] underline">
+           class="w-10 text-center font-tc text-sm text-[var(--rpg-gold)] hover:text-[var(--rpg-gold-bright)] underline">
           詳細
         </a>
       </div>
       {% endfor %}
       {% else %}
       <div class="px-5 py-8 text-center">
-        <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">
+        <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">
           {% if search_query %}找不到符合「{{ search_query }}」的學生。{% else %}尚無學生資料。{% endif %}
         </p>
       </div>
@@ -193,7 +193,7 @@
 </div>
 
 <!-- Toast -->
-<div id="toast" class="fixed bottom-4 right-4 z-50 hidden rounded px-4 py-3 font-tc text-xs font-bold transition-opacity"></div>
+<div id="toast" class="fixed bottom-4 right-4 z-50 hidden rounded px-4 py-3 font-tc text-sm font-bold transition-opacity"></div>
 {% endblock %}
 
 {% block scripts_extra %}
@@ -228,7 +228,7 @@ function clearSelection() {
 
 function showToast(msg, ok) {
   const t = document.getElementById('toast');
-  t.className = 'fixed bottom-4 right-4 z-50 rounded px-4 py-3 font-tc text-xs font-bold transition-opacity ' +
+  t.className = 'fixed bottom-4 right-4 z-50 rounded px-4 py-3 font-tc text-sm font-bold transition-opacity ' +
     (ok ? 'bg-[var(--rpg-success)]/20 border border-[var(--rpg-success)] text-[var(--rpg-success)]'
         : 'bg-[var(--rpg-danger)]/20 border border-[var(--rpg-danger)] text-[var(--rpg-danger)]');
   t.textContent = msg;

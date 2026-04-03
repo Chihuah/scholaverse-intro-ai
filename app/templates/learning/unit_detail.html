@@ -4,7 +4,7 @@
 
 {% block content %}
 <!-- Back button -->
-<a href="/progress" class="flex items-center gap-1.5 font-tc text-xs text-[var(--rpg-text-secondary)] hover:text-[var(--rpg-gold)] shrink-0">
+<a href="/progress" class="flex items-center gap-1.5 font-tc text-sm text-[var(--rpg-text-secondary)] hover:text-[var(--rpg-gold)] shrink-0">
   <i data-lucide="arrow-left" class="w-4 h-4"></i>返回學習歷程
 </a>
 
@@ -17,16 +17,16 @@
     {% if record and record.quiz_score and record.quiz_score > 0 %}
     <div class="flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 bg-[#4ade8033] self-start">
       <i data-lucide="check-circle-2" class="w-3 h-3 text-[var(--rpg-success)]"></i>
-      <span class="font-tc text-[9px] font-bold text-[var(--rpg-success)]">已完成</span>
+      <span class="font-tc text-sm font-bold text-[var(--rpg-success)]">已完成</span>
     </div>
     {% elif record %}
     <div class="flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 bg-[#f59e0b33] self-start">
       <i data-lucide="clock" class="w-3 h-3 text-[var(--rpg-warning)]"></i>
-      <span class="font-tc text-[9px] font-bold text-[var(--rpg-warning)]">學習中</span>
+      <span class="font-tc text-sm font-bold text-[var(--rpg-warning)]">學習中</span>
     </div>
     {% else %}
     <div class="flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 border border-[#333] self-start">
-      <span class="font-tc text-[9px] font-bold text-[var(--rpg-text-secondary)]">未解鎖</span>
+      <span class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)]">未解鎖</span>
     </div>
     {% endif %}
   </div>
@@ -47,7 +47,7 @@
   {% set tier_color = "#d4a847" if tier == "S" else ("#4ade80" if tier == "A" else ("#60a5fa" if tier == "B" else ("#f59e0b" if tier == "C" else "#f87171"))) %}
   {% set tier_label = "王者境界" if tier == "S" else ("卓越精進" if tier == "A" else ("穩健成長" if tier == "B" else ("初露鋒芒" if tier == "C" else "尚需努力"))) %}
   <div class="rounded px-4 py-4 bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)]">
-    <p class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)] mb-3">學習成績</p>
+    <p class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)] mb-3">學習成績</p>
 
     <!-- EXP 英雄區塊 -->
     <div class="flex items-center gap-4 mb-4 pb-4 border-b border-[var(--rpg-gold-dark)]/40">
@@ -60,14 +60,14 @@
       <div class="flex-1 flex flex-col gap-1.5">
         <div class="flex items-baseline gap-2">
           <span class="font-pixel text-xl" style="color: {{ tier_color }}">{{ exp }}</span>
-          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">學習 EXP</span>
-          <span class="font-tc text-[10px] font-bold ml-auto" style="color: {{ tier_color }}">{{ tier_label }}</span>
+          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">學習 EXP</span>
+          <span class="font-tc text-sm font-bold ml-auto" style="color: {{ tier_color }}">{{ tier_label }}</span>
         </div>
         <div class="w-full h-3 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
           <div class="h-full rounded-sm transition-all"
                style="width: {{ [exp, 100] | min }}%; background: linear-gradient(90deg, {{ tier_color }}99, {{ tier_color }})"></div>
         </div>
-        <p class="font-tc text-[9px] text-[var(--rpg-text-secondary)]">
+        <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">
           {% if not is_unit6 %}影片預習 ×20% + 課程完成度 ×40% + 課後測驗 ×40%
           {% else %}課程完成度 ×100%{% endif %}
         </p>
@@ -78,7 +78,7 @@
 
       <!-- 前測成績 -->
       <div class="flex flex-col gap-1">
-        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">前測成績</span>
+        <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">前測成績</span>
         <span class="font-tc text-base font-bold {% if is_unit6 or ptv is none %}text-[var(--rpg-text-secondary)]{% elif ptv >= 70 %}text-[var(--rpg-success)]{% elif ptv >= 40 %}text-[var(--rpg-warning)]{% else %}text-[var(--rpg-danger)]{% endif %}">
           {% if is_unit6 or ptv is none %}—{% else %}{{ ptv }} 分{% endif %}
         </span>
@@ -91,7 +91,7 @@
 
       <!-- 影片預習 -->
       <div class="flex flex-col gap-1">
-        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">影片預習</span>
+        <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">影片預習</span>
         <span class="font-tc text-base font-bold {% if is_unit6 or pv is none %}text-[var(--rpg-text-secondary)]{% elif pv >= 70 %}text-[var(--rpg-success)]{% elif pv >= 40 %}text-[var(--rpg-warning)]{% else %}text-[var(--rpg-danger)]{% endif %}">
           {% if is_unit6 or pv is none %}—{% else %}{{ pv }}%{% endif %}
         </span>
@@ -104,7 +104,7 @@
 
       <!-- 課程完成度 -->
       <div class="flex flex-col gap-1">
-        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">課程完成度</span>
+        <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">課程完成度</span>
         <span class="font-tc text-base font-bold {% if cv is none %}text-[var(--rpg-text-secondary)]{% elif cv >= 70 %}text-[var(--rpg-success)]{% elif cv >= 40 %}text-[var(--rpg-warning)]{% else %}text-[var(--rpg-danger)]{% endif %}">
           {% if cv is none %}—{% else %}{{ cv }}%{% endif %}
         </span>
@@ -117,7 +117,7 @@
 
       <!-- 課後測驗 -->
       <div class="flex flex-col gap-1">
-        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">課後測驗</span>
+        <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">課後測驗</span>
         <span class="font-tc text-base font-bold {% if is_unit6 or qv is none %}text-[var(--rpg-text-secondary)]{% elif qv >= 70 %}text-[var(--rpg-success)]{% elif qv >= 40 %}text-[var(--rpg-warning)]{% else %}text-[var(--rpg-danger)]{% endif %}">
           {% if is_unit6 or qv is none %}—{% else %}{{ qv }} 分{% endif %}
         </span>
@@ -147,18 +147,18 @@
     'pose': '姿勢',
   } %}
   <div class="rounded px-4 py-4 bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)]">
-    <p class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)] mb-3">
+    <p class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)] mb-3">
       選擇角色屬性 — {{ attr_label }}
     </p>
     {% for attr_type, attr_data in available.items() %}
     <div class="flex flex-col gap-2 mb-4">
-      <span class="font-tc text-[10px] text-[var(--rpg-gold)]">
+      <span class="font-tc text-sm text-[var(--rpg-gold)]">
         {{ attr_type_labels.get(attr_type, attr_type) }}
       </span>
       <div class="flex flex-wrap gap-2" id="attr-group-{{ attr_type | replace(' ', '-') }}">
         {% for option in attr_data.options %}
         {% set display_label = attr_data.labels.get(option, option) %}
-        <button class="attr-btn font-tc text-xs rounded px-3 py-1.5 border transition-colors
+        <button class="attr-btn font-tc text-sm rounded px-3 py-1.5 border transition-colors
                        {% if chosen_attrs.get(attr_type) == option %}
                          bg-[var(--rpg-gold-dark)] border-[var(--rpg-gold)] text-[var(--rpg-gold-bright)] selected
                        {% else %}
@@ -179,7 +179,7 @@
       </div>
     </div>
     {% endfor %}
-    <div id="attr-result" class="font-tc text-xs mt-2"></div>
+    <div id="attr-result" class="font-tc text-sm mt-2"></div>
   </div>
   {% endif %}
 </div>
@@ -187,7 +187,7 @@
 <!-- Unit not found -->
 <div class="flex flex-col items-center gap-3 py-16 text-center">
   <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">找不到此單元</p>
-  <a href="/progress" class="font-tc text-xs text-[var(--rpg-gold)] hover:underline">返回學習歷程</a>
+  <a href="/progress" class="font-tc text-sm text-[var(--rpg-gold)] hover:underline">返回學習歷程</a>
 </div>
 {% endif %}
 {% endblock %}
@@ -210,7 +210,7 @@ async function selectAttr(btn) {
     });
     const data = await resp.json();
     if (!resp.ok) {
-      resultEl.className = 'font-tc text-xs mt-2 text-[var(--rpg-danger)]';
+      resultEl.className = 'font-tc text-sm mt-2 text-[var(--rpg-danger)]';
       resultEl.textContent = data.detail || '儲存失敗';
       return;
     }
@@ -236,10 +236,10 @@ async function selectAttr(btn) {
       );
     }
 
-    resultEl.className = 'font-tc text-xs mt-2 text-[var(--rpg-success)]';
+    resultEl.className = 'font-tc text-sm mt-2 text-[var(--rpg-success)]';
     resultEl.textContent = '✓ 已儲存：' + attrLabel;
   } catch (e) {
-    resultEl.className = 'font-tc text-xs mt-2 text-[var(--rpg-danger)]';
+    resultEl.className = 'font-tc text-sm mt-2 text-[var(--rpg-danger)]';
     resultEl.textContent = '網路錯誤，請稍後再試';
   } finally {
     btn.disabled = false;
