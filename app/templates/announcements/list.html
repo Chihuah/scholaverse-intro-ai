@@ -16,7 +16,7 @@
               rounded-lg border border-[var(--rpg-gold-dark)]/40
               bg-[var(--rpg-bg-panel)]">
     <i data-lucide="inbox" class="w-12 h-12 text-[var(--rpg-text-secondary)]"></i>
-    <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">目前沒有公告</p>
+    <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">目前沒有公告</p>
   </div>
 
   {% else %}
@@ -38,22 +38,22 @@
         <div class="flex items-center gap-2 flex-1 min-w-0">
           <!-- Unread badge -->
           <span id="badge-{{ ann.id }}"
-                class="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-sm font-pixel
+                class="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-pixel
                        bg-[var(--rpg-danger)] text-white
                        {% if is_read %}hidden{% endif %}">
             NEW
           </span>
-          <h2 class="font-tc text-sm font-black text-[var(--rpg-text-primary)] leading-snug">
+          <h2 class="font-tc text-xs font-black text-[var(--rpg-text-primary)] leading-snug">
             {{ ann.title }}
           </h2>
         </div>
-        <span class="shrink-0 font-tc text-sm text-[var(--rpg-text-secondary)] whitespace-nowrap">
+        <span class="shrink-0 font-tc text-xs text-[var(--rpg-text-secondary)] whitespace-nowrap">
           {{ ann.created_at | format_taipei('%Y/%m/%d') }}
         </span>
       </div>
 
       <!-- Content preview (first 25 chars) -->
-      <div class="font-tc text-sm text-[var(--rpg-text-secondary)] leading-relaxed">
+      <div class="font-tc text-xs text-[var(--rpg-text-secondary)] leading-relaxed">
         <p id="preview-{{ ann.id }}">
           {{ ann.content[:25] }}{% if ann.content | length > 25 %}…{% endif %}
         </p>
@@ -67,7 +67,7 @@
       {% if ann.content | length > 25 %}
       <button id="btn-{{ ann.id }}"
               onclick="expandAnnouncement({{ ann.id }})"
-              class="self-start font-tc text-sm font-bold text-[var(--rpg-gold)]
+              class="self-start font-tc text-xs font-bold text-[var(--rpg-gold)]
                      hover:text-[var(--rpg-gold-bright)] transition-colors flex items-center gap-1">
         <i data-lucide="chevron-down" class="w-3 h-3"></i>
         <span>Read more</span>

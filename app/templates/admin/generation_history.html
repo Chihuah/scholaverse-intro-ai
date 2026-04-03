@@ -7,7 +7,7 @@
 <div class="flex flex-col gap-3 w-full shrink-0 sm:flex-row sm:items-center sm:justify-between">
   <div class="flex items-center gap-3">
     <a href="/admin"
-       class="flex items-center gap-1.5 font-tc text-sm text-[var(--rpg-gold)] hover:text-[var(--rpg-gold-bright)] transition-colors">
+       class="flex items-center gap-1.5 font-tc text-xs text-[var(--rpg-gold)] hover:text-[var(--rpg-gold-bright)] transition-colors">
       <i data-lucide="chevron-left" class="w-4 h-4"></i>
       返回管理後台
     </a>
@@ -17,7 +17,7 @@
       <h1 class="font-tc text-lg font-black tracking-widest text-[var(--rpg-gold)]">生圖歷史紀錄</h1>
     </div>
   </div>
-  <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">
+  <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">
     共 {{ records | length }} 筆紀錄（時間 UTC+8）
   </span>
 </div>
@@ -32,7 +32,7 @@
   ] %}
   {% for value, label in tabs %}
   <a href="/admin/generation-history?status_filter={{ value }}"
-     class="flex items-center gap-1.5 rounded px-4 py-1.5 font-tc text-sm font-bold transition-opacity hover:opacity-90
+     class="flex items-center gap-1.5 rounded px-4 py-1.5 font-tc text-xs font-bold transition-opacity hover:opacity-90
             {% if status_filter == value %}
             bg-[var(--rpg-gold-dark)] border-2 border-[var(--rpg-gold)] text-[var(--rpg-gold-bright)]
             {% else %}
@@ -50,13 +50,13 @@
     <!-- Header row -->
     <div class="flex items-center gap-3 px-5 py-3 bg-[var(--rpg-bg-card)]
                 border-b border-[var(--rpg-gold-dark)] sticky top-0 z-10">
-      <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-24">Job ID</span>
-      <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-24">學號</span>
-      <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] flex-1">姓名</span>
-      <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-36 text-center">開始時間</span>
-      <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-36 text-center">完成時間</span>
-      <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-20 text-center">生成耗時</span>
-      <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-20 text-center">狀態</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-24">Job ID</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-24">學號</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] flex-1">姓名</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-36 text-center">開始時間</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-36 text-center">完成時間</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-20 text-center">生成耗時</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-20 text-center">狀態</span>
     </div>
 
     <!-- Data rows -->
@@ -66,22 +66,22 @@
                 hover:bg-[var(--rpg-bg-card)]/50
                 {% if loop.index is odd %}bg-[var(--rpg-bg-card)]/20{% endif %}">
       <!-- Job ID -->
-      <span class="font-mono text-sm text-[var(--rpg-text-secondary)] w-24 truncate"
+      <span class="font-mono text-xs text-[var(--rpg-text-secondary)] w-24 truncate"
             title="{{ r.job_id }}">{{ r.job_id[:8] }}..</span>
       <!-- Student ID -->
-      <span class="font-tc text-sm text-[var(--rpg-gold)] w-24">{{ r.student_id }}</span>
+      <span class="font-tc text-xs text-[var(--rpg-gold)] w-24">{{ r.student_id }}</span>
       <!-- Name -->
-      <span class="font-tc text-sm text-[var(--rpg-text-primary)] flex-1">{{ r.student_name }}</span>
+      <span class="font-tc text-xs text-[var(--rpg-text-primary)] flex-1">{{ r.student_name }}</span>
       <!-- Created at (UTC+8) -->
-      <span class="font-mono text-sm text-[var(--rpg-text-secondary)] w-36 text-center">
+      <span class="font-mono text-xs text-[var(--rpg-text-secondary)] w-36 text-center">
         {{ r.created_at_fmt or '--' }}
       </span>
       <!-- Generated at (UTC+8) -->
-      <span class="font-mono text-sm text-[var(--rpg-text-secondary)] w-36 text-center">
+      <span class="font-mono text-xs text-[var(--rpg-text-secondary)] w-36 text-center">
         {{ r.generated_at_fmt or '--' }}
       </span>
       <!-- Duration -->
-      <span class="font-mono text-sm w-20 text-center
+      <span class="font-mono text-xs w-20 text-center
                    {% if r.duration %}text-[var(--rpg-gold)]{% else %}text-[var(--rpg-text-secondary)]{% endif %}">
         {{ r.duration or '--' }}
       </span>
@@ -90,25 +90,25 @@
         {% if r.status == 'completed' %}
         <span class="flex items-center gap-1 rounded px-2 py-0.5
                      bg-green-900/50 border border-green-600
-                     font-tc text-sm text-green-400">
+                     font-tc text-xs text-green-400">
           <i data-lucide="check-circle" class="w-3 h-3"></i>完成
         </span>
         {% elif r.status == 'failed' %}
         <span class="flex items-center gap-1 rounded px-2 py-0.5
                      bg-red-900/50 border border-red-700
-                     font-tc text-sm text-red-400">
+                     font-tc text-xs text-red-400">
           <i data-lucide="x-circle" class="w-3 h-3"></i>失敗
         </span>
         {% elif r.status in ('generating', 'processing', 'uploading') %}
         <span class="flex items-center gap-1 rounded px-2 py-0.5
                      bg-[var(--rpg-gold-dark)]/30 border border-[var(--rpg-gold)]
-                     font-tc text-sm text-[var(--rpg-gold)]">
+                     font-tc text-xs text-[var(--rpg-gold)]">
           <i data-lucide="loader" class="w-3 h-3 animate-spin"></i>生成中
         </span>
         {% else %}
         <span class="flex items-center gap-1 rounded px-2 py-0.5
                      bg-gray-800 border border-gray-600
-                     font-tc text-sm text-gray-400">
+                     font-tc text-xs text-gray-400">
           <i data-lucide="clock" class="w-3 h-3"></i>{{ r.status }}
         </span>
         {% endif %}
@@ -118,7 +118,7 @@
     {% else %}
     <div class="px-5 py-12 text-center">
       <i data-lucide="inbox" class="w-8 h-8 text-[var(--rpg-text-secondary)] mx-auto mb-3"></i>
-      <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">尚無生圖紀錄</p>
+      <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">尚無生圖紀錄</p>
     </div>
     {% endif %}
   </div>

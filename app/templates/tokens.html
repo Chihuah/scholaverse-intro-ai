@@ -7,12 +7,12 @@
 <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between shrink-0">
   <div class="flex items-center gap-2">
     <i data-lucide="coins" class="w-5 h-5 text-[var(--rpg-gold)]"></i>
-    <h1 class="font-pixel text-sm text-[var(--rpg-gold)]">點數紀錄</h1>
+    <h1 class="font-pixel text-xs text-[var(--rpg-gold)]">點數紀錄</h1>
   </div>
   {% if user %}
   <div class="flex items-center gap-1.5">
     <i data-lucide="wallet" class="w-4 h-4 text-[var(--rpg-gold-bright)]"></i>
-    <span class="font-tc text-sm font-bold text-[var(--rpg-gold-bright)]">目前餘額：{{ user.tokens }} 點</span>
+    <span class="font-tc text-xs font-bold text-[var(--rpg-gold-bright)]">目前餘額：{{ user.tokens }} 點</span>
   </div>
   {% endif %}
 </div>
@@ -21,14 +21,14 @@
 <!-- Not logged in -->
 <div class="flex flex-col items-center justify-center py-16 text-center gap-3">
   <i data-lucide="lock" class="w-10 h-10 text-[var(--rpg-text-secondary)]"></i>
-  <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">請登入後查看點數紀錄</p>
+  <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">請登入後查看點數紀錄</p>
 </div>
 
 {% elif not transactions %}
 <!-- No records -->
 <div class="flex flex-col items-center justify-center py-16 text-center gap-3">
   <i data-lucide="receipt" class="w-10 h-10 text-[var(--rpg-text-secondary)]"></i>
-  <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">尚無點數異動紀錄</p>
+  <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">尚無點數異動紀錄</p>
 </div>
 
 {% else %}
@@ -40,9 +40,9 @@
       <!-- Header -->
       <div class="flex items-center gap-4 px-5 py-3 bg-[var(--rpg-bg-card)]
                   border-b border-[var(--rpg-gold-dark)] sticky top-0 z-10">
-        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-36 shrink-0">時間</span>
-        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] w-20 text-center shrink-0">點數變動</span>
-        <span class="font-tc text-sm font-bold text-[var(--rpg-gold)] flex-1">說明</span>
+        <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-36 shrink-0">時間</span>
+        <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-20 text-center shrink-0">點數變動</span>
+        <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] flex-1">說明</span>
       </div>
 
       <!-- Rows -->
@@ -51,7 +51,7 @@
                   {% if loop.index is odd %}bg-[var(--rpg-bg-card)]/20{% endif %}">
 
         <!-- Timestamp -->
-        <span class="font-tc text-sm text-[var(--rpg-text-secondary)] w-36 shrink-0 tabular-nums">
+        <span class="font-tc text-xs text-[var(--rpg-text-secondary)] w-36 shrink-0 tabular-nums">
           {{ txn.created_at | format_taipei('%Y-%m-%d %H:%M') if txn.created_at else '—' }}
         </span>
 
@@ -60,26 +60,26 @@
           {% if txn.amount > 0 %}
           <span class="inline-flex items-center gap-0.5 rounded px-2 py-0.5
                        bg-[var(--rpg-success)]/15 border border-[var(--rpg-success)]/40
-                       font-tc text-sm font-bold text-[var(--rpg-success)]">
+                       font-tc text-xs font-bold text-[var(--rpg-success)]">
             +{{ txn.amount }}
           </span>
           {% elif txn.amount < 0 %}
           <span class="inline-flex items-center gap-0.5 rounded px-2 py-0.5
                        bg-[var(--rpg-danger)]/15 border border-[var(--rpg-danger)]/40
-                       font-tc text-sm font-bold text-[var(--rpg-danger)]">
+                       font-tc text-xs font-bold text-[var(--rpg-danger)]">
             {{ txn.amount }}
           </span>
           {% else %}
           <span class="inline-flex items-center gap-0.5 rounded px-2 py-0.5
                        bg-[var(--rpg-bg-input)] border border-[#444]
-                       font-tc text-sm font-bold text-[var(--rpg-text-secondary)]">
+                       font-tc text-xs font-bold text-[var(--rpg-text-secondary)]">
             ±0
           </span>
           {% endif %}
         </div>
 
         <!-- Reason -->
-        <span class="font-tc text-sm text-[var(--rpg-text-primary)] flex-1">
+        <span class="font-tc text-xs text-[var(--rpg-text-primary)] flex-1">
           {{ txn.reason or '—' }}
         </span>
 

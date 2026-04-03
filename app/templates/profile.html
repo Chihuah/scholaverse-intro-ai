@@ -6,13 +6,13 @@
 <!-- Header -->
 <div class="flex items-center gap-2 shrink-0">
   <i data-lucide="user-circle" class="w-5 h-5 text-[var(--rpg-gold)]"></i>
-  <h1 class="font-pixel text-sm text-[var(--rpg-gold)]">個人資料</h1>
+  <h1 class="font-pixel text-xs text-[var(--rpg-gold)]">個人資料</h1>
 </div>
 
 {% if not user %}
 <div class="flex flex-col items-center justify-center py-16 text-center gap-3">
   <i data-lucide="lock" class="w-10 h-10 text-[var(--rpg-text-secondary)]"></i>
-  <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">請登入後查看個人資料</p>
+  <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">請登入後查看個人資料</p>
 </div>
 {% else %}
 <div class="flex flex-col gap-4">
@@ -31,20 +31,20 @@
         {{ user.name }}
       </span>
       {% if user.nickname %}
-      <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">
+      <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">
         @{{ user.nickname }}
       </span>
       {% endif %}
       <span class="inline-flex items-center gap-1 mt-1">
         {% if user.role == 'teacher' %}
         <span class="rounded px-2 py-0.5 bg-[var(--rpg-gold-dark)]/40 border border-[var(--rpg-gold-dark)]
-                     font-tc text-sm text-[var(--rpg-gold)]">教師</span>
+                     font-tc text-xs text-[var(--rpg-gold)]">教師</span>
         {% elif user.role == 'admin' %}
         <span class="rounded px-2 py-0.5 bg-[var(--rpg-gold-dark)]/40 border border-[var(--rpg-gold-dark)]
-                     font-tc text-sm text-[var(--rpg-gold)]">管理員</span>
+                     font-tc text-xs text-[var(--rpg-gold)]">管理員</span>
         {% else %}
         <span class="rounded px-2 py-0.5 bg-[var(--rpg-bg-input)] border border-[#444]
-                     font-tc text-sm text-[var(--rpg-text-secondary)]">學生</span>
+                     font-tc text-xs text-[var(--rpg-text-secondary)]">學生</span>
         {% endif %}
       </span>
     </div>
@@ -53,7 +53,7 @@
   <!-- Read-only info -->
   <div class="rounded border border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-panel)] overflow-hidden">
     <div class="px-5 py-3 bg-[var(--rpg-bg-card)] border-b border-[var(--rpg-gold-dark)]">
-      <span class="font-pixel text-sm text-[var(--rpg-gold)]">帳號資訊</span>
+      <span class="font-pixel text-xs text-[var(--rpg-gold)]">帳號資訊</span>
     </div>
     <div class="divide-y divide-[var(--rpg-bg-input)]">
 
@@ -65,23 +65,23 @@
       {% for label, value, icon in info_rows %}
       <div class="flex items-center gap-4 px-5 py-3.5">
         <i data-lucide="{{ icon }}" class="w-4 h-4 text-[var(--rpg-text-secondary)] shrink-0"></i>
-        <span class="font-tc text-sm text-[var(--rpg-text-secondary)] w-24 shrink-0">{{ label }}</span>
-        <span class="font-tc text-sm text-[var(--rpg-text-primary)]">{{ value }}</span>
+        <span class="font-tc text-xs text-[var(--rpg-text-secondary)] w-24 shrink-0">{{ label }}</span>
+        <span class="font-tc text-xs text-[var(--rpg-text-primary)]">{{ value }}</span>
       </div>
       {% endfor %}
 
       <!-- Token balance -->
       <div class="flex items-center gap-4 px-5 py-3.5">
         <i data-lucide="coins" class="w-4 h-4 text-[var(--rpg-gold-bright)] shrink-0"></i>
-        <span class="font-tc text-sm text-[var(--rpg-text-secondary)] w-24 shrink-0">代幣餘額</span>
-        <span class="font-tc text-sm font-bold text-[var(--rpg-gold-bright)]">{{ user.tokens }} 點</span>
+        <span class="font-tc text-xs text-[var(--rpg-text-secondary)] w-24 shrink-0">代幣餘額</span>
+        <span class="font-tc text-xs font-bold text-[var(--rpg-gold-bright)]">{{ user.tokens }} 點</span>
       </div>
 
       <!-- Last login -->
       <div class="flex items-center gap-4 px-5 py-3.5">
         <i data-lucide="calendar-check" class="w-4 h-4 text-[var(--rpg-text-secondary)] shrink-0"></i>
-        <span class="font-tc text-sm text-[var(--rpg-text-secondary)] w-24 shrink-0">最近登入</span>
-        <span class="font-tc text-sm text-[var(--rpg-text-primary)]">
+        <span class="font-tc text-xs text-[var(--rpg-text-secondary)] w-24 shrink-0">最近登入</span>
+        <span class="font-tc text-xs text-[var(--rpg-text-primary)]">
           {{ user.last_login_date.strftime('%Y-%m-%d') if user.last_login_date else '—' }}
         </span>
       </div>
@@ -89,8 +89,8 @@
       <!-- Joined date -->
       <div class="flex items-center gap-4 px-5 py-3.5">
         <i data-lucide="calendar-plus" class="w-4 h-4 text-[var(--rpg-text-secondary)] shrink-0"></i>
-        <span class="font-tc text-sm text-[var(--rpg-text-secondary)] w-24 shrink-0">加入時間</span>
-        <span class="font-tc text-sm text-[var(--rpg-text-primary)]">
+        <span class="font-tc text-xs text-[var(--rpg-text-secondary)] w-24 shrink-0">加入時間</span>
+        <span class="font-tc text-xs text-[var(--rpg-text-primary)]">
           {{ user.created_at | format_taipei('%Y-%m-%d') if user.created_at else '—' }}
         </span>
       </div>
@@ -102,7 +102,7 @@
   <div class="rounded border border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-panel)] overflow-hidden">
     <div class="px-5 py-3 bg-[var(--rpg-bg-card)] border-b border-[var(--rpg-gold-dark)] flex items-center gap-2">
       <i data-lucide="trophy" class="w-4 h-4 text-[var(--rpg-gold)]"></i>
-      <span class="font-pixel text-sm text-[var(--rpg-gold)]">成就徽章</span>
+      <span class="font-pixel text-xs text-[var(--rpg-gold)]">成就徽章</span>
     </div>
     <div class="p-4">
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -120,15 +120,15 @@
           <i data-lucide="lock" class="w-3.5 h-3.5 text-[var(--rpg-text-secondary)] shrink-0"></i>
           {% endif %}
           <div class="flex flex-col min-w-0">
-            <span class="font-tc text-sm font-bold {% if ach %}text-[var(--rpg-gold-bright)]{% else %}text-[var(--rpg-text-secondary)]{% endif %} truncate">
+            <span class="font-tc text-xs font-bold {% if ach %}text-[var(--rpg-gold-bright)]{% else %}text-[var(--rpg-text-secondary)]{% endif %} truncate">
               {{ info.label }}
             </span>
             {% if ach %}
-            <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">
+            <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">
               {{ ach.awarded_at | format_taipei('%Y-%m-%d') }}
             </span>
             {% else %}
-            <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">+{{ info.tokens }} 點</span>
+            <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">+{{ info.tokens }} 點</span>
             {% endif %}
           </div>
         </div>
@@ -140,7 +140,7 @@
   <!-- Editable: nickname -->
   <div class="rounded border border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-panel)] overflow-hidden">
     <div class="px-5 py-3 bg-[var(--rpg-bg-card)] border-b border-[var(--rpg-gold-dark)]">
-      <span class="font-pixel text-sm text-[var(--rpg-gold)]">修改暱稱</span>
+      <span class="font-pixel text-xs text-[var(--rpg-gold)]">修改暱稱</span>
     </div>
     <div class="px-5 py-4">
 
@@ -148,7 +148,7 @@
       <div class="flex items-center gap-2 rounded px-3 py-2 mb-4
                   bg-[var(--rpg-success)]/10 border border-[var(--rpg-success)]/40">
         <i data-lucide="check-circle" class="w-4 h-4 text-[var(--rpg-success)] shrink-0"></i>
-        <span class="font-tc text-sm text-[var(--rpg-success)]">暱稱已更新！</span>
+        <span class="font-tc text-xs text-[var(--rpg-success)]">暱稱已更新！</span>
       </div>
       {% endif %}
 
@@ -156,13 +156,13 @@
       <div class="flex items-center gap-2 rounded px-3 py-2 mb-4
                   bg-[var(--rpg-danger)]/10 border border-[var(--rpg-danger)]/40">
         <i data-lucide="alert-circle" class="w-4 h-4 text-[var(--rpg-danger)] shrink-0"></i>
-        <span class="font-tc text-sm text-[var(--rpg-danger)]">{{ error }}</span>
+        <span class="font-tc text-xs text-[var(--rpg-danger)]">{{ error }}</span>
       </div>
       {% endif %}
 
       <form method="post" action="/profile" class="flex flex-col gap-3">
         <div class="flex flex-col gap-1.5">
-          <label class="font-tc text-sm text-[var(--rpg-text-secondary)]">
+          <label class="font-tc text-xs text-[var(--rpg-text-secondary)]">
             角色暱稱（僅限英數字，最多 18 字元）
           </label>
           <input type="text" name="nickname"
@@ -170,13 +170,13 @@
                  maxlength="18"
                  placeholder="例如：HeroName123"
                  class="rounded px-3 py-2 bg-[var(--rpg-bg-input)] border border-[#444]
-                        font-tc text-sm text-[var(--rpg-text-primary)] outline-none
+                        font-tc text-xs text-[var(--rpg-text-primary)] outline-none
                         focus:border-[var(--rpg-gold-dark)] transition-colors">
         </div>
         <button type="submit"
                 class="self-start inline-flex items-center gap-1.5 rounded px-4 py-2
                        bg-[var(--rpg-gold-dark)] border border-[var(--rpg-gold)]
-                       font-tc text-sm font-bold text-[var(--rpg-gold)]
+                       font-tc text-xs font-bold text-[var(--rpg-gold)]
                        hover:bg-[var(--rpg-gold)]/20 transition-colors">
           <i data-lucide="save" class="w-3.5 h-3.5"></i>
           儲存暱稱

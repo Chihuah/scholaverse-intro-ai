@@ -13,7 +13,7 @@
 <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between shrink-0">
   <div class="flex items-center gap-2">
     <i data-lucide="scroll-text" class="w-5 h-5 text-[var(--rpg-gold)]"></i>
-    <h1 class="font-pixel text-sm text-[var(--rpg-gold)]">學習任務紀錄</h1>
+    <h1 class="font-pixel text-xs text-[var(--rpg-gold)]">學習任務紀錄</h1>
   </div>
   {% set ns = namespace(total=0.0) %}
   {% for item in unit_data %}
@@ -27,7 +27,7 @@
     {% endif %}
   {% endfor %}
   {% set char_level = [(ns.total / 6) | round(0) | int, 1] | max %}
-  <span class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)]">
+  <span class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)]">
     角色等級：<span class="text-[var(--rpg-gold)]">Lv.{{ char_level }}</span>
   </span>
 </div>
@@ -47,23 +47,23 @@
 
     <!-- Title row -->
     <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-      <span class="font-tc text-sm font-bold text-[var(--rpg-text-primary)]">
+      <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">
         {{ u.name }}
       </span>
       <div class="flex items-center gap-2">
         {% if item.status == 'completed' %}
         <div class="flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 bg-[#4ade8033]">
           <i data-lucide="check-circle-2" class="w-3 h-3 text-[var(--rpg-success)]"></i>
-          <span class="font-tc text-sm font-bold text-[var(--rpg-success)]">已完成</span>
+          <span class="font-tc text-xs font-bold text-[var(--rpg-success)]">已完成</span>
         </div>
         {% else %}
         <div class="flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 bg-[#f59e0b33]">
           <i data-lucide="clock" class="w-3 h-3 text-[var(--rpg-warning)]"></i>
-          <span class="font-tc text-sm font-bold text-[var(--rpg-warning)]">學習中</span>
+          <span class="font-tc text-xs font-bold text-[var(--rpg-warning)]">學習中</span>
         </div>
         {% endif %}
         <a href="/progress/{{ u.code }}"
-           class="flex items-center gap-0.5 font-tc text-sm text-[var(--rpg-text-secondary)]
+           class="flex items-center gap-0.5 font-tc text-xs text-[var(--rpg-text-secondary)]
                   hover:text-[var(--rpg-gold)] transition-colors">
           <i data-lucide="external-link" class="w-3 h-3"></i>詳情
         </a>
@@ -82,11 +82,11 @@
       <!-- 前測成績 -->
       <div class="flex flex-col gap-0.5 w-full">
         <div class="flex items-center justify-between">
-          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">前測成績</span>
+          <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">前測成績</span>
           {% if is_unit6 or ptv is none %}
-          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">—</span>
+          <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">—</span>
           {% else %}
-          <span class="font-tc text-sm font-bold text-[var(--rpg-text-primary)]">{{ ptv }} 分</span>
+          <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">{{ ptv }} 分</span>
           {% endif %}
         </div>
         <div class="w-full h-1.5 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
@@ -99,11 +99,11 @@
       <!-- 影片預習 -->
       <div class="flex flex-col gap-0.5 w-full">
         <div class="flex items-center justify-between">
-          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">影片預習</span>
+          <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">影片預習</span>
           {% if is_unit6 or pv is none %}
-          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">—</span>
+          <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">—</span>
           {% else %}
-          <span class="font-tc text-sm font-bold text-[var(--rpg-text-primary)]">{{ pv }}%</span>
+          <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">{{ pv }}%</span>
           {% endif %}
         </div>
         <div class="w-full h-1.5 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
@@ -116,11 +116,11 @@
       <!-- 課程完成度 -->
       <div class="flex flex-col gap-0.5 w-full">
         <div class="flex items-center justify-between">
-          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">課程完成度</span>
+          <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">課程完成度</span>
           {% if cv is none %}
-          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">—</span>
+          <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">—</span>
           {% else %}
-          <span class="font-tc text-sm font-bold text-[var(--rpg-text-primary)]">{{ cv }}%</span>
+          <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">{{ cv }}%</span>
           {% endif %}
         </div>
         <div class="w-full h-1.5 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
@@ -133,11 +133,11 @@
       <!-- 課後測驗 -->
       <div class="flex flex-col gap-0.5 w-full">
         <div class="flex items-center justify-between">
-          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">課後測驗</span>
+          <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">課後測驗</span>
           {% if is_unit6 or qv is none %}
-          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">—</span>
+          <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">—</span>
           {% else %}
-          <span class="font-tc text-sm font-bold text-[var(--rpg-text-primary)]">{{ qv }} 分</span>
+          <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">{{ qv }} 分</span>
           {% endif %}
         </div>
         <div class="w-full h-1.5 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
@@ -161,15 +161,15 @@
     {% set tier_color = "#d4a847" if tier == "S" else ("#4ade80" if tier == "A" else ("#60a5fa" if tier == "B" else ("#f59e0b" if tier == "C" else "#f87171"))) %}
     <div class="flex items-center gap-2.5 pt-2 mt-0.5 border-t border-[var(--rpg-gold-dark)]/30">
       <!-- Tier badge -->
-      <div class="flex items-center justify-center w-7 h-7 rounded shrink-0 font-pixel text-sm"
+      <div class="flex items-center justify-center w-7 h-7 rounded shrink-0 font-pixel text-xs"
            style="color: {{ tier_color }}; background: {{ tier_color }}18; border: 1px solid {{ tier_color }}55">
         {{ tier }}
       </div>
       <!-- Bar + label -->
       <div class="flex-1 flex flex-col gap-0.5">
         <div class="flex items-center justify-between">
-          <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">學習 EXP</span>
-          <span class="font-pixel text-sm" style="color: {{ tier_color }}">{{ exp }}</span>
+          <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">學習 EXP</span>
+          <span class="font-pixel text-xs" style="color: {{ tier_color }}">{{ exp }}</span>
         </div>
         <div class="w-full h-2 rounded-sm bg-[var(--rpg-bg-input)] overflow-hidden">
           <div class="h-full rounded-sm" style="width: {{ [exp, 100] | min }}%; background: {{ tier_color }}"></div>
@@ -181,19 +181,19 @@
     <!-- Inline attribute selection (logged-in users only) -->
     {% if item.available and user %}
     <div class="border-t border-[var(--rpg-gold-dark)]/40 pt-2.5">
-      <p class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)] mb-2 tracking-wider uppercase">
+      <p class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)] mb-2 tracking-wider uppercase">
         選擇角色屬性 — {{ item.attr_label }}
       </p>
       {% for attr_type, attr_data in item.available.items() %}
       <div class="flex flex-col gap-1 mb-2">
-        <span class="font-tc text-sm text-[var(--rpg-gold)]">
+        <span class="font-tc text-xs text-[var(--rpg-gold)]">
           {{ attr_type_labels.get(attr_type, attr_type) }}
         </span>
         <div class="flex flex-wrap gap-1.5" id="attr-group-{{ attr_type }}">
           {% for option in attr_data.options %}
           {% set display_label = attr_data.labels.get(option, option) %}
           {% set is_selected = item.chosen_attrs.get(attr_type) == option %}
-          <button class="attr-btn font-tc text-sm rounded px-2.5 py-1 border transition-colors
+          <button class="attr-btn font-tc text-xs rounded px-2.5 py-1 border transition-colors
                          {% if is_selected %}
                            bg-[var(--rpg-gold-dark)] border-[var(--rpg-gold)] text-[var(--rpg-gold-bright)] selected
                          {% else %}
@@ -211,13 +211,13 @@
         </div>
       </div>
       {% endfor %}
-      <div id="unit-result-{{ u.code }}" class="font-tc text-sm min-h-[1rem]"></div>
+      <div id="unit-result-{{ u.code }}" class="font-tc text-xs min-h-[1rem]"></div>
     </div>
     {% else %}
     {% if item.status == 'completed' %}
     <div class="flex items-center gap-1.5 pt-1">
       <i data-lucide="lock-open" class="w-3 h-3 text-[var(--rpg-success)]"></i>
-      <span class="font-tc text-sm text-[var(--rpg-success)]">已解鎖：{{ item.attr_label }}</span>
+      <span class="font-tc text-xs text-[var(--rpg-success)]">已解鎖：{{ item.attr_label }}</span>
     </div>
     {% endif %}
     {% endif %}
@@ -231,13 +231,13 @@
               sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3.5 sm:gap-0">
     <div class="flex items-center gap-2">
       <i data-lucide="lock" class="w-4 h-4 text-[var(--rpg-text-secondary)]"></i>
-      <span class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)]">{{ u.name }}</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)]">{{ u.name }}</span>
     </div>
     <div class="flex items-center gap-1.5">
       <div class="flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 border border-[#333]">
-        <span class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)]">未解鎖</span>
+        <span class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)]">未解鎖</span>
       </div>
-      <span class="font-tc text-sm text-[var(--rpg-text-secondary)]">{{ item.attr_label }}</span>
+      <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">{{ item.attr_label }}</span>
     </div>
   </div>
   {% endif %}
@@ -247,7 +247,7 @@
   {% if not unit_data %}
   <div class="flex flex-col items-center justify-center py-12 text-center">
     <i data-lucide="scroll-text" class="w-10 h-10 text-[var(--rpg-text-secondary)] mb-3"></i>
-    <p class="font-tc text-sm text-[var(--rpg-text-secondary)]">尚無學習單元資料。</p>
+    <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">尚無學習單元資料。</p>
   </div>
   {% endif %}
 </div>
@@ -257,7 +257,7 @@
 <div class="shrink-0 rounded px-4 py-3.5 bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)]">
   <div class="flex items-center gap-2 mb-3">
     <i data-lucide="user-circle" class="w-4 h-4 text-[var(--rpg-gold)]"></i>
-    <span class="font-pixel text-sm text-[var(--rpg-gold)]">角色屬性配置</span>
+    <span class="font-pixel text-xs text-[var(--rpg-gold)]">角色屬性配置</span>
   </div>
   <div class="grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-3 lg:grid-cols-4">
     {% for item in unit_data %}
@@ -265,10 +265,10 @@
         {% for attr_type, attr_data in item.available.items() %}
           {% set chosen_val = item.chosen_attrs.get(attr_type) %}
           <div class="flex items-center gap-1.5 min-w-0">
-            <span class="font-tc text-sm text-[var(--rpg-text-secondary)] shrink-0">
+            <span class="font-tc text-xs text-[var(--rpg-text-secondary)] shrink-0">
               {{ attr_type_labels.get(attr_type, attr_type) }}
             </span>
-            <span class="font-tc text-sm font-bold truncate
+            <span class="font-tc text-xs font-bold truncate
                          {% if chosen_val %}text-[var(--rpg-gold-bright)]{% else %}text-[var(--rpg-text-secondary)] opacity-40{% endif %}"
                   id="summary-val-{{ attr_type }}">
               {% if chosen_val %}
@@ -288,17 +288,17 @@
 {% if user %}
 <!-- Generate card button -->
 <div class="shrink-0 flex flex-col gap-2">
-  <div id="gen-error" class="font-tc text-sm text-[var(--rpg-danger)] hidden"></div>
+  <div id="gen-error" class="font-tc text-xs text-[var(--rpg-danger)] hidden"></div>
   {% if has_configs %}
   <button id="gen-btn" onclick="generateCard()"
-          class="flex items-center justify-center gap-2 rounded px-4 py-3 font-tc text-sm font-bold
+          class="flex items-center justify-center gap-2 rounded px-4 py-3 font-tc text-xs font-bold
                  bg-[var(--rpg-gold-dark)] border-2 border-[var(--rpg-gold)] text-[var(--rpg-gold-bright)]
                  transition-opacity hover:opacity-90 active:opacity-75 disabled:opacity-50 w-full">
     <i data-lucide="sparkles" class="w-4 h-4"></i>
     {% if has_cards %}重新生成角色卡牌（消耗 {{ regen_cost }} 代幣）
     {% else %}生成我的角色卡牌（首次免費）{% endif %}
   </button>
-  <p class="font-tc text-sm text-[var(--rpg-text-secondary)] text-center">
+  <p class="font-tc text-xs text-[var(--rpg-text-secondary)] text-center">
     {% if has_cards %}目前代幣餘額：{{ user.tokens }} 代幣
     {% else %}完成屬性設定後點擊生成，後續重新生成需消耗 {{ regen_cost }} 代幣{% endif %}
   </p>
@@ -306,9 +306,9 @@
   <div class="flex items-center justify-center gap-2 rounded px-4 py-3
               bg-[var(--rpg-bg-panel)] border-2 border-[#333]">
     <i data-lucide="lock" class="w-4 h-4 text-[var(--rpg-text-secondary)]"></i>
-    <span class="font-tc text-sm font-bold text-[var(--rpg-text-secondary)]">尚無可生成的角色配置</span>
+    <span class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)]">尚無可生成的角色配置</span>
   </div>
-  <p class="font-tc text-sm text-[var(--rpg-text-secondary)] text-center">
+  <p class="font-tc text-xs text-[var(--rpg-text-secondary)] text-center">
     完成學習單元後選擇角色屬性，即可解鎖生成功能
   </p>
   {% endif %}
@@ -336,7 +336,7 @@ async function selectAttr(btn) {
     const data = await resp.json();
     if (!resp.ok) {
       if (resultEl) {
-        resultEl.className = 'font-tc text-sm text-[var(--rpg-danger)]';
+        resultEl.className = 'font-tc text-xs text-[var(--rpg-danger)]';
         resultEl.textContent = data.detail || '儲存失敗';
       }
       return;
@@ -364,13 +364,13 @@ async function selectAttr(btn) {
     }
 
     if (resultEl) {
-      resultEl.className = 'font-tc text-sm text-[var(--rpg-success)]';
+      resultEl.className = 'font-tc text-xs text-[var(--rpg-success)]';
       resultEl.textContent = '✓ 已儲存：' + attrLabel;
       setTimeout(function() { resultEl.textContent = ''; }, 2000);
     }
   } catch (e) {
     if (resultEl) {
-      resultEl.className = 'font-tc text-sm text-[var(--rpg-danger)]';
+      resultEl.className = 'font-tc text-xs text-[var(--rpg-danger)]';
       resultEl.textContent = '網路錯誤，請稍後再試';
     }
   } finally {
