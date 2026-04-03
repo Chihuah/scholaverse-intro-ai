@@ -7,6 +7,8 @@ import logging
 import re
 from datetime import datetime, timezone
 
+import httpx
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, UploadFile, File
 from fastapi.responses import HTMLResponse
 from sqlalchemy import case, delete, select, func
@@ -27,6 +29,7 @@ from app.services.excel_import import (
     parse_completion_excel,
     parse_score_excel,
 )
+from app.config import settings
 from app.templating import templates
 
 logger = logging.getLogger(__name__)
@@ -1173,3 +1176,94 @@ async def api_admin_delete_rule(
     await db.delete(rule)
     await db.commit()
     return {"status": "ok"}
+
+
+# ─── Queue & Generation History ──────────────────────────────────────
+
+
+@router.get("/api/admin/queue")
+async def api_admin_queue(
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """代理查詢 ai-worker 佇列，補上學生姓名後回傳。"""
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(f"{settings.AI_WORKER_BASE_URL}/api/queue")
+            resp.raise_for_status()
+            queue_data = resp.json()
+    except Exception as exc:
+        logger.warning("Failed to fetch ai-worker queue: %s", exc)
+        return {"current_job": None, "queued_jobs": [], "queue_size": 0, "error": str(exc)}
+
+    # Collect all student_ids in queue
+    student_ids: list[str] = []
+    if queue_data.get("current_job"):
+        student_ids.append(queue_data["current_job"]["student_id"])
+    for item in queue_data.get("queued_jobs", []):
+        student_ids.append(item["student_id"])
+
+    # Lookup names in bulk
+    name_map: dict[str, str] = {}
+    if student_ids:
+        result = await db.execute(
+            select(Student.student_id, Student.name).where(
+                Student.student_id.in_(student_ids)
+            )
+        )
+        name_map = {row[0]: row[1] for row in result.all()}
+
+    def enrich(item: dict) -> dict:
+        sid = item.get("student_id", "")
+        return {**item, "student_name": name_map.get(sid, "")}
+
+    enriched_current = enrich(queue_data["current_job"]) if queue_data.get("current_job") else None
+    enriched_queued = [enrich(j) for j in queue_data.get("queued_jobs", [])]
+
+    return {
+        "current_job": enriched_current,
+        "queued_jobs": enriched_queued,
+        "queue_size": queue_data.get("queue_size", 0),
+    }
+
+
+@router.get("/admin/generation-history")
+async def admin_generation_history(
+    request: Request,
+    status_filter: str = "all",
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """生圖歷史紀錄頁面。"""
+    query = (
+        select(Card, Student.student_id, Student.name)
+        .join(Student, Card.student_id == Student.id)
+        .where(Card.job_id.isnot(None))
+        .order_by(Card.created_at.desc())
+    )
+    if status_filter in ("generating", "completed", "failed"):
+        query = query.where(Card.status == status_filter)
+
+    rows = (await db.execute(query)).all()
+
+    records = []
+    for card, sid, name in rows:
+        records.append({
+            "card_id": card.id,
+            "job_id": card.job_id,
+            "student_id": sid,
+            "student_name": name,
+            "status": card.status,
+            "created_at": card.created_at,
+            "generated_at": card.generated_at,
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "admin/generation_history.html",
+        {
+            "user": user,
+            "records": records,
+            "status_filter": status_filter,
+        },
+    )
