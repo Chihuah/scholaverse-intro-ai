@@ -85,11 +85,6 @@ async def generate_card(
             detail="尚未設定任何角色屬性，請先完成學習單元的屬性配置。",
         )
 
-    # Build card_config dict from individual attribute configs
-    card_config: dict = {}
-    for cfg in configs:
-        card_config[cfg.attribute_type] = cfg.attribute_value
-
     # 2. Gather learning data
     records_result = await db.execute(
         select(LearningRecord, Unit)
@@ -97,6 +92,22 @@ async def generate_card(
         .where(LearningRecord.student_id == user.id)
     )
     rows = records_result.all()
+
+    # Build card_config dict — only include attributes from units the student
+    # has actually completed (unit_1~5: quiz_score IS NOT NULL; unit_6: completion_rate > 0)
+    active_unit_ids: set[int] = set()
+    for record, unit in rows:
+        if unit.code == "unit_6":
+            if (record.completion_rate or 0) > 0:
+                active_unit_ids.add(unit.id)
+        else:
+            if record.quiz_score is not None:
+                active_unit_ids.add(unit.id)
+
+    card_config: dict = {}
+    for cfg in configs:
+        if cfg.unit_id in active_unit_ids:
+            card_config[cfg.attribute_type] = cfg.attribute_value
 
     unit_scores: dict = {}
     total_exp_sum = 0.0
