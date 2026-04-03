@@ -58,7 +58,7 @@ async def index(request: Request, db: AsyncSession = Depends(get_db)):
         # Fetch latest card
         result = await db.execute(
             select(Card)
-            .where(Card.student_id == display_student_id, Card.is_latest == True)
+            .where(Card.student_id == display_student_id, Card.is_display == True)  # noqa: E712
             .limit(1)
         )
         latest_card = result.scalar_one_or_none()

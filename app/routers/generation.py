@@ -195,6 +195,7 @@ async def generate_card(
         logger.error("Failed to submit generation for card %d: %s", new_card.id, e)
         new_card.status = "failed"
         new_card.is_latest = False  # Don't let a failed card claim is_latest
+        new_card.is_display = False  # Don't let a failed card hold is_display
 
         # Restore the previous latest card so the dashboard stays correct
         for prev_card in prev_latest_cards:
