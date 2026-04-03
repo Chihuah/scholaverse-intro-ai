@@ -99,7 +99,7 @@ async def cards_gallery(
     if user:
         result = await db.execute(
             select(Card)
-            .where(Card.student_id == user.id)
+            .where(Card.student_id == user.id, Card.is_hidden == False, Card.status != "failed")  # noqa: E712
             .order_by(Card.created_at.desc())
         )
     else:
@@ -150,7 +150,7 @@ async def hall(request: Request, db: AsyncSession = Depends(get_db)):
 
     result = await db.execute(
         select(Card)
-        .where(Card.is_latest == True)
+        .where(Card.is_display == True)  # noqa: E712
         .options(selectinload(Card.student))
         .order_by(Card.level_number.desc())
     )

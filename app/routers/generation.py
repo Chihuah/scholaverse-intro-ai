@@ -5,6 +5,7 @@ GET  /api/cards/{id}/status — Poll generation status
 """
 
 import json
+import math
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -50,6 +51,21 @@ async def generate_card(
     )
     is_regen = existing_result.scalar_one_or_none() is not None
     token_cost = CARD_REGEN_COST if is_regen else 0
+
+    # 409: block duplicate in-flight requests (pending/generating already exists)
+    in_flight_result = await db.execute(
+        select(Card)
+        .where(
+            Card.student_id == user.id,
+            Card.status.in_(["pending", "generating"]),
+        )
+        .limit(1)
+    )
+    if in_flight_result.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="已有一張卡牌正在生成中，請稍候完成後再重試。",
+        )
 
     if is_regen and user.tokens < token_cost:
         raise HTTPException(
@@ -115,7 +131,7 @@ async def generate_card(
     border = determine_border_style(count * 3)  # rough estimate: ~3 weeks per unit
 
     card_config["border"] = border
-    card_config["level"] = level
+    card_config["level"] = max(1, min(10, math.ceil(level / 10)))
 
     # expression / pose come from unit_6 (自主學習); supply defaults if not yet configured
     card_config.setdefault("expression", "calm")
@@ -128,6 +144,7 @@ async def generate_card(
     prev_latest_cards = prev_latest_result.scalars().all()
     for prev_card in prev_latest_cards:
         prev_card.is_latest = False
+        prev_card.is_display = False
 
     # 5. Create new Card row and deduct tokens atomically
     config_snapshot = json.dumps(card_config, ensure_ascii=False)
@@ -138,6 +155,7 @@ async def generate_card(
         border_style=border,
         level_number=level,
         is_latest=True,
+        is_display=True,
     )
     db.add(new_card)
 
@@ -169,8 +187,9 @@ async def generate_card(
             card_config=card_config,
             learning_data=learning_data,
         )
-        # Update card status to generating
+        # Update card status to generating and persist job_id for polling
         new_card.status = "generating"
+        new_card.job_id = job_id
         await db.commit()
     except Exception as e:
         logger.error("Failed to submit generation for card %d: %s", new_card.id, e)
@@ -181,6 +200,7 @@ async def generate_card(
         for prev_card in prev_latest_cards:
             if prev_card.status == "completed":
                 prev_card.is_latest = True
+                prev_card.is_display = True
                 break
 
         # Refund tokens if the ai-worker submission failed
@@ -231,11 +251,83 @@ async def card_status(
         "generated_at": card.generated_at.isoformat() if card.generated_at else None,
     }
 
-    # If still generating, also poll ai-worker for live status
-    if card.status == "generating":
+    # If still generating, poll ai-worker for live queue position
+    if card.status == "generating" and card.job_id:
         ai_worker = get_ai_worker_service()
-        # We don't store job_id on the card, so we check via ai-worker if possible
-        # For mock, the callback will update the card directly
-        pass
+        try:
+            job_info = await ai_worker.check_job_status(card.job_id)
+            if "position" in job_info:
+                response["queue_position"] = job_info["position"]
+            if "estimated_seconds" in job_info:
+                response["estimated_seconds"] = job_info["estimated_seconds"]
+        except Exception as exc:
+            logger.warning("check_job_status failed for job %s: %s", card.job_id, exc)
 
     return response
+
+
+@router.post("/{card_id}/set-display")
+async def set_display_card(
+    card_id: int,
+    user: Student = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Set a completed card as the hall display card for this student."""
+    result = await db.execute(
+        select(Card).where(Card.id == card_id, Card.student_id == user.id)
+    )
+    card = result.scalar_one_or_none()
+    if card is None:
+        raise HTTPException(status_code=404, detail="找不到此卡牌。")
+    if card.status != "completed":
+        raise HTTPException(status_code=409, detail="只有生成完成的卡牌才能設為大廳展示。")
+
+    # Clear is_display on all student's cards, then set this one
+    all_cards_result = await db.execute(
+        select(Card).where(Card.student_id == user.id, Card.is_display == True)  # noqa: E712
+    )
+    for c in all_cards_result.scalars().all():
+        c.is_display = False
+
+    card.is_display = True
+    await db.commit()
+    return {"success": True, "card_id": card_id}
+
+
+@router.post("/{card_id}/hide")
+async def hide_card(
+    card_id: int,
+    user: Student = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Soft-delete a card from the student's gallery (admin still sees it)."""
+    result = await db.execute(
+        select(Card).where(Card.id == card_id, Card.student_id == user.id)
+    )
+    card = result.scalar_one_or_none()
+    if card is None:
+        raise HTTPException(status_code=404, detail="找不到此卡牌。")
+
+    was_display = card.is_display
+    card.is_hidden = True
+    card.is_display = False
+
+    if was_display:
+        # Auto-promote newest completed non-hidden card to display
+        next_result = await db.execute(
+            select(Card)
+            .where(
+                Card.student_id == user.id,
+                Card.id != card_id,
+                Card.status == "completed",
+                Card.is_hidden == False,  # noqa: E712
+            )
+            .order_by(Card.created_at.desc())
+            .limit(1)
+        )
+        next_card = next_result.scalar_one_or_none()
+        if next_card is not None:
+            next_card.is_display = True
+
+    await db.commit()
+    return {"success": True}

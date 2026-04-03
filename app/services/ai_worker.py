@@ -181,7 +181,14 @@ class MockAIWorkerService(AIWorkerService):
         job = self._jobs.get(job_id)
         if job is None:
             return {"status": "not_found", "error": f"Job {job_id} not found"}
-        return {
+        # Count how many jobs are ahead of this one (queued or generating before it)
+        all_jobs = list(self._jobs.values())
+        generating_jobs = [j for j in all_jobs if j["status"] == "generating"]
+        position = next(
+            (i + 1 for i, j in enumerate(generating_jobs) if j is job),
+            0,
+        )
+        result: dict = {
             "job_id": job_id,
             "status": job["status"],
             "card_id": job["card_id"],
@@ -189,6 +196,10 @@ class MockAIWorkerService(AIWorkerService):
             "thumbnail_path": job["thumbnail_path"],
             "generated_at": job["generated_at"],
         }
+        if job["status"] == "generating":
+            result["position"] = position
+            result["estimated_seconds"] = position * 30
+        return result
 
 
 # Singleton instances

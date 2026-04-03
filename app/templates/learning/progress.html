@@ -378,12 +378,22 @@ async function selectAttr(btn) {
   }
 }
 
+const GEN_LOCK_KEY = 'scholaverse_gen_in_flight';
+
 async function generateCard() {
   const btn = document.getElementById('gen-btn');
   const errEl = document.getElementById('gen-error');
   errEl.classList.add('hidden');
   errEl.textContent = '';
 
+  // sessionStorage 防護：同分頁防止重複提交
+  if (sessionStorage.getItem(GEN_LOCK_KEY)) {
+    errEl.textContent = '已有一張卡牌正在生成中，請稍候完成後再重試。';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  sessionStorage.setItem(GEN_LOCK_KEY, '1');
   btn.disabled = true;
   const originalHtml = btn.innerHTML;
   btn.innerHTML = '<svg class="animate-spin w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>生成中，請稍候…';
@@ -391,11 +401,19 @@ async function generateCard() {
   try {
     const resp = await fetch('/api/cards/generate', { method: 'POST' });
     const data = await resp.json();
+    if (resp.status === 409) {
+      // 後端確認已在生成中，導向卡牌頁面或顯示提示
+      errEl.textContent = data.detail || '已有一張卡牌正在生成中，請稍候完成後再重試。';
+      errEl.classList.remove('hidden');
+      return;
+    }
     if (!resp.ok) {
       errEl.textContent = data.detail || '生成失敗，請稍後再試';
       errEl.classList.remove('hidden');
       return;
     }
+    // 成功後清除鎖定並導向卡牌頁面
+    sessionStorage.removeItem(GEN_LOCK_KEY);
     window.location.href = '/cards/' + data.card_id;
   } catch (e) {
     errEl.textContent = '網路錯誤，請稍後再試';
@@ -404,6 +422,10 @@ async function generateCard() {
     btn.disabled = false;
     btn.innerHTML = originalHtml;
     if (window.lucide) lucide.createIcons();
+    // 若未成功（未導頁），釋放鎖定讓使用者可重試
+    if (sessionStorage.getItem(GEN_LOCK_KEY)) {
+      sessionStorage.removeItem(GEN_LOCK_KEY);
+    }
   }
 }
 </script>

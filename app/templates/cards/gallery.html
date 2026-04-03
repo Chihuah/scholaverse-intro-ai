@@ -31,7 +31,7 @@
 
     <a href="/cards/{{ card.id }}"
        class="flex flex-col items-center gap-2 cursor-pointer group no-underline">
-      <div class="w-40 h-60 md:w-[200px] md:h-[300px] rounded overflow-hidden
+      <div class="relative w-40 h-60 md:w-[200px] md:h-[300px] rounded overflow-hidden
                   transition-transform group-hover:scale-[1.02]"
            style="border: 3px solid {{ border_color }};
                   {% if card.is_latest %}box-shadow: 0 0 12px 2px {{ border_color }}66;{% endif %}">
@@ -40,15 +40,23 @@
         {% else %}
         <img src="/static/images/placeholder/card-copper-1.png" alt="卡牌" class="w-full h-full object-cover">
         {% endif %}
+        <div class="absolute inset-0 bg-black/60 flex items-center justify-center
+                    opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <span class="font-tc text-xs font-bold text-white tracking-wide">卡牌詳情</span>
+        </div>
       </div>
 
-      <div class="flex items-center gap-1.5">
+      <div class="flex items-center gap-1.5 flex-wrap justify-center">
         <span class="font-tc text-[10px] font-black" style="color: {{ border_color }}">
           Lv.{{ card.level_number }}
         </span>
         {% if card.is_latest %}
         <i data-lucide="star" class="w-3.5 h-3.5" style="color: {{ border_color }}"></i>
         <span class="font-tc text-[9px] font-bold" style="color: {{ border_color }}">最新</span>
+        {% endif %}
+        {% if card.is_display %}
+        <i data-lucide="castle" class="w-3.5 h-3.5" style="color: {{ border_color }}"></i>
+        <span class="font-tc text-[9px] font-bold" style="color: {{ border_color }}">展示</span>
         {% endif %}
       </div>
 
