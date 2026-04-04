@@ -161,48 +161,48 @@
     <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">卡牌（{{ cards | length }}）</span>
   </div>
   {% if cards %}
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+  <div class="flex flex-wrap gap-2">
     {% for card in cards %}
-    <div class="rounded bg-[var(--rpg-bg-panel)] border-2
-      {% if card.is_latest %}border-[var(--rpg-gold)]{% else %}border-[var(--rpg-gold-dark)]{% endif %}
-      overflow-hidden">
-      <!-- 縮圖 -->
+    <div class="rounded bg-[var(--rpg-bg-panel)] border-2 overflow-hidden flex-shrink-0
+      {% if card.is_latest %}border-[var(--rpg-gold)]{% else %}border-[var(--rpg-gold-dark)]{% endif %}"
+      style="width:73px;">
+      <!-- 縮圖 (220×320 → 33% = 73×107) -->
       {% if card.thumbnail_url %}
-      <a href="/admin/cards/{{ card.id }}" target="_blank">
+      <a href="{{ card.image_url }}" target="_blank" title="#{{ card.id }} {{ card.rarity or '' }} Lv.{{ card.level_number or '?' }}">
         <img src="{{ card.thumbnail_url }}" alt="card #{{ card.id }}"
-             class="w-full aspect-[11/16] object-cover">
+             style="width:73px;height:107px;object-fit:cover;display:block;">
       </a>
       {% elif card.status == 'generating' %}
-      <div class="w-full aspect-[11/16] flex items-center justify-center bg-[var(--rpg-bg-card)]">
-        <i data-lucide="loader" class="w-6 h-6 text-[var(--rpg-warning)] animate-spin"></i>
+      <div style="width:73px;height:107px;" class="flex items-center justify-center bg-[var(--rpg-bg-card)]">
+        <i data-lucide="loader" class="w-5 h-5 text-[var(--rpg-warning)] animate-spin"></i>
       </div>
       {% elif card.status == 'failed' %}
-      <div class="w-full aspect-[11/16] flex items-center justify-center bg-[var(--rpg-bg-card)]">
-        <i data-lucide="x-circle" class="w-6 h-6 text-[var(--rpg-danger)]"></i>
+      <div style="width:73px;height:107px;" class="flex items-center justify-center bg-[var(--rpg-bg-card)]">
+        <i data-lucide="x-circle" class="w-5 h-5 text-[var(--rpg-danger)]"></i>
       </div>
       {% else %}
-      <div class="w-full aspect-[11/16] flex items-center justify-center bg-[var(--rpg-bg-card)]">
-        <i data-lucide="image-off" class="w-6 h-6 text-[var(--rpg-text-secondary)]"></i>
+      <div style="width:73px;height:107px;" class="flex items-center justify-center bg-[var(--rpg-bg-card)]">
+        <i data-lucide="image-off" class="w-5 h-5 text-[var(--rpg-text-secondary)]"></i>
       </div>
       {% endif %}
       <!-- metadata -->
-      <div class="px-2 py-1.5 flex flex-col gap-0.5">
-        <div class="flex items-center justify-between">
-          <span class="font-tc text-[10px] text-[var(--rpg-gold)]">
+      <div class="px-1 py-1 flex flex-col gap-0.5" style="width:73px;">
+        <div class="flex items-center justify-between gap-0.5">
+          <span class="font-tc text-[9px] text-[var(--rpg-gold)] truncate">
             #{{ card.id }}{% if card.is_latest %} ★{% endif %}
           </span>
-          <span class="font-tc text-[10px] font-bold rounded px-1
+          <span class="font-tc text-[8px] font-bold rounded px-0.5 flex-shrink-0
             {% if card.status == 'completed' %}bg-[var(--rpg-success)]/20 text-[var(--rpg-success)]
             {% elif card.status == 'generating' %}bg-[var(--rpg-warning)]/20 text-[var(--rpg-warning)]
             {% elif card.status == 'failed' %}bg-[var(--rpg-danger)]/20 text-[var(--rpg-danger)]
             {% else %}bg-[var(--rpg-bg-card)] text-[var(--rpg-text-secondary)]{% endif %}">
-            {{ card.status }}
+            {{ card.status[:4] if card.status else '?' }}
           </span>
         </div>
-        <div class="flex items-center justify-between">
-          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">Lv.{{ card.level_number or '?' }}</span>
+        <div class="flex items-center justify-between gap-0.5">
+          <span class="font-tc text-[9px] text-[var(--rpg-text-secondary)]">Lv.{{ card.level_number or '?' }}</span>
           {% if card.rarity %}
-          <span class="font-pixel text-[9px] font-bold
+          <span class="font-pixel text-[8px] font-bold flex-shrink-0
             {% if card.rarity == 'UR' %}text-[#ff6b6b]
             {% elif card.rarity == 'SSR' %}text-[#d4a847]
             {% elif card.rarity == 'SR' %}text-[#a855f7]
@@ -212,9 +212,6 @@
           </span>
           {% endif %}
         </div>
-        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">
-          {{ card.created_at | format_taipei('%m-%d %H:%M') if card.created_at else '—' }}
-        </span>
       </div>
     </div>
     {% endfor %}
