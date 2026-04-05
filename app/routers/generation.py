@@ -20,6 +20,7 @@ from app.models.learning_record import LearningRecord
 from app.models.student import Student
 from app.models.token_transaction import TokenTransaction
 from app.models.unit import Unit
+from app.services.system_settings import get_system_setting
 from app.services import get_ai_worker_service
 
 # Tokens deducted when regenerating a card (first generation is free)
@@ -200,6 +201,7 @@ async def generate_card(
 
     # 6. Submit to ai-worker
     ai_worker = get_ai_worker_service()
+    ollama_model = await get_system_setting(db, "ollama_model")
     try:
         job_id = await ai_worker.submit_generation(
             card_id=new_card.id,
@@ -207,6 +209,7 @@ async def generate_card(
             student_nickname=user.nickname or user.name,
             card_config=card_config,
             learning_data=learning_data,
+            ollama_model_override=ollama_model,
         )
         # Update card status to generating and persist job_id for polling
         new_card.status = "generating"

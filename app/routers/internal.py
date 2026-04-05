@@ -6,6 +6,7 @@ GET  /api/images/proxy/{path}          — Proxy images from internal VMs over H
 
 import logging
 from datetime import datetime, timezone
+from urllib.parse import urlencode
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
@@ -19,20 +20,16 @@ from app.database import get_db
 from app.models.card import Card
 
 
-def _image_path_to_url(image_path: str | None) -> str | None:
-    """Convert ai-worker image_path to a browser-safe URL.
-
-    /static/... paths (mock mode) are returned as-is.
-    All other paths are rewritten to go through the web-server's own
-    /api/images/proxy/ endpoint so the browser never needs to reach
-    an internal HTTP-only VM directly (avoids Mixed Content errors).
-    """
+def _image_path_to_url(image_path: str | None, *, version: str | None = None) -> str | None:
+    """Convert ai-worker image_path to a browser-safe URL with cache-busting."""
     if not image_path:
         return None
-    if image_path.startswith("/static/"):
-        return image_path
-    stripped = image_path.lstrip("/")
-    return f"/api/images/proxy/{stripped}"
+
+    url = image_path if image_path.startswith("/static/") else f"/api/images/proxy/{image_path.lstrip('/')}"
+    if version:
+        sep = '&' if '?' in url else '?'
+        url = f"{url}{sep}{urlencode({'v': version})}"
+    return url
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +72,9 @@ async def generation_callback(
 
     if body.status == "completed":
         card.status = "completed"
-        card.image_url = _image_path_to_url(body.image_path)
-        card.thumbnail_url = _image_path_to_url(body.thumbnail_path)
+        cache_version = body.job_id or body.generated_at or str(datetime.now(timezone.utc).timestamp())
+        card.image_url = _image_path_to_url(body.image_path, version=cache_version)
+        card.thumbnail_url = _image_path_to_url(body.thumbnail_path, version=cache_version)
         if body.prompt:
             card.prompt = body.prompt
         if body.final_prompt:
@@ -125,7 +123,15 @@ async def proxy_image(path: str):
                 resp = await client.get(url)
                 if resp.status_code == 200:
                     content_type = resp.headers.get("content-type", "image/png")
-                    return Response(content=resp.content, media_type=content_type)
+                    return Response(
+                        content=resp.content,
+                        media_type=content_type,
+                        headers={
+                            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                            "Pragma": "no-cache",
+                            "Expires": "0",
+                        },
+                    )
             except httpx.HTTPError:
                 continue
     raise HTTPException(status_code=404, detail="Image not found")

@@ -82,6 +82,14 @@
       </div>
       {% endif %}
     </div>
+    {% if reuse_simulation_url %}
+    <a href="{{ reuse_simulation_url }}"
+       class="flex items-center justify-center gap-2 rounded px-4 py-2 bg-[var(--rpg-gold-dark)] border border-[var(--rpg-gold)] font-tc text-xs font-bold text-[var(--rpg-gold-bright)] hover:opacity-90 transition-opacity w-full"
+       style="max-width:220px;">
+      <i data-lucide="copy-plus" class="w-3.5 h-3.5"></i>
+      複用到模擬生圖
+    </a>
+    {% endif %}
   </div>
 
   <div class="flex flex-col gap-3 flex-1 min-w-0">

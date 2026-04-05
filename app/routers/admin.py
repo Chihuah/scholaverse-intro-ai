@@ -6,6 +6,7 @@ import json
 import logging
 import re
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
 
 import httpx
 
@@ -18,6 +19,7 @@ from app.database import get_db
 from app.dependencies import require_teacher
 from app.models.attribute_rule import AttributeRule
 from app.models.card import Card
+from app.models.system_setting import SystemSetting
 from app.models.card_config import CardConfig
 from app.models.learning_record import LearningRecord
 from app.models.student import Student
@@ -30,11 +32,65 @@ from app.services.excel_import import (
     parse_score_excel,
 )
 from app.config import settings
+from app.services.system_settings import (
+    OLLAMA_MODEL_SUGGESTIONS,
+    SYSTEM_SETTING_LABELS,
+    get_system_setting,
+    get_system_settings_map,
+    set_system_setting,
+)
 from app.templating import templates
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["admin"])
+
+
+def _parse_card_snapshot(card: Card) -> dict:
+    raw = card.config_snapshot
+    if isinstance(raw, dict):
+        return dict(raw)
+    if isinstance(raw, str) and raw.strip():
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            return {}
+    return {}
+
+
+def _build_simulation_reuse_url(card: Card, student: Student | None = None) -> str:
+    snapshot = _parse_card_snapshot(card)
+    meta = snapshot.pop("__meta", {}) if isinstance(snapshot.get("__meta"), dict) else {}
+    params: dict[str, str | int] = {}
+
+    for key in [
+        "race", "gender", "class", "body", "equipment", "weapon_quality",
+        "weapon_type", "background", "expression", "pose"
+    ]:
+        value = snapshot.get(key)
+        if value not in (None, ""):
+            params[key] = value
+
+    level = snapshot.get("level") or card.level_number
+    rarity = snapshot.get("rarity") or card.rarity
+    nickname = meta.get("nickname") or getattr(student, "nickname", None) or ""
+    seed = meta.get("seed")
+    if seed in (None, "", -1, "-1"):
+        seed = card.seed
+
+    if level is not None:
+        params["level"] = int(level)
+    if rarity:
+        params["rarity"] = str(rarity)
+    if nickname:
+        params["nickname"] = str(nickname)
+    if seed not in (None, ""):
+        params["seed"] = int(seed)
+
+    query = urlencode(params)
+    return f"/admin/simulation?{query}" if query else "/admin/simulation"
 
 
 # ─── HTML Pages ───────────────────────────────────────────────────────
@@ -284,6 +340,7 @@ async def admin_card_detail(
             "back_url": f"/admin/students/{student.id}",
             "back_label": f"返回 {student.name} 的資料",
             "show_admin_debug": True,
+            "reuse_simulation_url": _build_simulation_reuse_url(card, student),
         },
     )
 
@@ -1065,7 +1122,7 @@ async def admin_rules(
     user: Student = Depends(require_teacher),
     db: AsyncSession = Depends(get_db),
 ):
-    """Attribute rules management page."""
+    """System settings page: global parameters + attribute rules."""
     result = await db.execute(
         select(AttributeRule).order_by(
             AttributeRule.unit_code, AttributeRule.sort_order, AttributeRule.tier
@@ -1073,7 +1130,6 @@ async def admin_rules(
     )
     rules = result.scalars().all()
 
-    # Group by unit_code → attribute_type
     from collections import OrderedDict
     grouped: dict[str, dict[str, list]] = OrderedDict()
     for rule in rules:
@@ -1089,6 +1145,8 @@ async def admin_rules(
             "sort_order": rule.sort_order,
         })
 
+    system_settings = await get_system_settings_map(db)
+
     return templates.TemplateResponse(
         request,
         "admin/rules.html",
@@ -1096,8 +1154,32 @@ async def admin_rules(
             "user": user,
             "grouped": grouped,
             "unit_names": UNIT_NAMES,
+            "system_settings": system_settings,
+            "system_setting_labels": SYSTEM_SETTING_LABELS,
+            "ollama_model_suggestions": OLLAMA_MODEL_SUGGESTIONS,
         },
     )
+
+
+@router.put("/api/admin/system-settings/{setting_key}")
+async def api_admin_update_system_setting(
+    setting_key: str,
+    payload: dict = Body(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update one persisted global system setting."""
+    value = str(payload.get("value", "") or "").strip()
+    try:
+        row = await set_system_setting(db, setting_key, value)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Unknown system setting key")
+
+    return {
+        "key": row.key,
+        "value": row.value,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
 
 
 @router.put("/api/admin/rules/{rule_id}")
@@ -1459,6 +1541,16 @@ async def api_admin_simulation_generate(
     rarity_input: str = body.get("rarity", "auto")
     nickname: str = body.get("nickname", "Admin Test") or "Admin Test"
 
+    seed_raw = body.get("seed")
+    requested_seed: int | None = None
+    if seed_raw not in (None, "", -1, "-1"):
+        try:
+            requested_seed = int(seed_raw)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="Seed ?????")
+        if requested_seed < 0:
+            raise HTTPException(status_code=400, detail="Seed ??????????? -1 / ??????")
+
     rarity = roll_rarity(level) if rarity_input == "auto" else rarity_input
     card_config["level"] = level
     card_config["rarity"] = rarity
@@ -1466,9 +1558,15 @@ async def api_admin_simulation_generate(
 
     sim_student = await _get_or_create_simulation_student(db)
 
+    snapshot_for_storage = dict(card_config)
+    snapshot_for_storage["__meta"] = {
+        "nickname": nickname,
+        "seed": requested_seed if requested_seed is not None else -1,
+    }
+
     new_card = Card(
         student_id=sim_student.id,
-        config_snapshot=json.dumps(card_config),
+        config_snapshot=json.dumps(snapshot_for_storage),
         status="pending",
         border_style="copper",
         level_number=level,
@@ -1487,6 +1585,7 @@ async def api_admin_simulation_generate(
     }
 
     ai_worker = get_ai_worker_service()
+    ollama_model = await get_system_setting(db, "ollama_model")
     job_id = None
     try:
         job_id = await ai_worker.submit_generation(
@@ -1495,6 +1594,8 @@ async def api_admin_simulation_generate(
             student_nickname=nickname,
             card_config=card_config,
             learning_data=learning_data,
+            seed=requested_seed,
+            ollama_model_override=ollama_model,
         )
         new_card.status = "generating"
         new_card.job_id = job_id
@@ -1589,5 +1690,6 @@ async def admin_simulation_card_detail(
             "back_url": "/admin/simulation",
             "back_label": "返回模擬生圖",
             "show_admin_debug": True,
+            "reuse_simulation_url": _build_simulation_reuse_url(card, sim_student),
         },
     )

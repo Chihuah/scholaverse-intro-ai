@@ -10,6 +10,7 @@ from app.models.token_transaction import TokenTransaction
 from app.models.attribute_rule import AttributeRule
 from app.models.announcement import Announcement, AnnouncementRead
 from app.models.achievement import StudentAchievement, ACHIEVEMENT_TYPES
+from app.models.system_setting import SystemSetting
 
 __all__ = [
     "Base",
@@ -24,4 +25,5 @@ __all__ = [
     "AnnouncementRead",
     "StudentAchievement",
     "ACHIEVEMENT_TYPES",
+    "SystemSetting",
 ]

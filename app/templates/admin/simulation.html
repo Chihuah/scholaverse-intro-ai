@@ -119,6 +119,16 @@
                     font-tc text-xs text-[var(--rpg-text-primary)] w-40
                     focus:outline-none focus:border-[var(--rpg-gold)]">
     </div>
+    <!-- Seed -->
+    <div class="flex flex-col gap-2">
+      <label for="seed-input" class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)]">種子 Seed</label>
+      <input type="number" id="seed-input" value="-1" step="1"
+             placeholder="-1 或留空 = 隨機"
+             class="rounded px-3 py-1.5 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]
+                    font-tc text-xs text-[var(--rpg-text-primary)] w-40
+                    focus:outline-none focus:border-[var(--rpg-gold)]">
+      <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">-1 或留空代表隨機值</span>
+    </div>
   </div>
 </div>
 
@@ -248,6 +258,15 @@ async function submitSimulation() {
   const rarityMode = document.querySelector('input[name="rarity_mode"]:checked').value;
   const rarity = rarityMode === 'auto' ? 'auto' : document.getElementById('rarity-select').value;
   const nickname = document.getElementById('nickname-input').value.trim() || 'Admin Test';
+  const seedRaw = document.getElementById('seed-input').value.trim();
+  let seed = -1;
+  if (seedRaw !== '') {
+    seed = Number.parseInt(seedRaw, 10);
+    if (Number.isNaN(seed)) {
+      showToast('Seed 必須是整數', 'error');
+      return;
+    }
+  }
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
@@ -258,7 +277,7 @@ async function submitSimulation() {
     const resp = await fetch('/api/admin/simulation/generate', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({card_config, level, rarity, nickname})
+      body: JSON.stringify({card_config, level, rarity, nickname, seed})
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
@@ -286,7 +305,7 @@ function startPolling() {
 
 async function pollResults() {
   try {
-    const resp = await fetch('/api/admin/simulation/cards');
+    const resp = await fetch('/api/admin/simulation/cards', {cache: 'no-store'});
     const cards = await resp.json();
     renderResults(cards);
     const stillGoing = cards.some(c => c.status === 'generating' || c.status === 'pending');
@@ -373,8 +392,60 @@ function showToast(msg, type) {
 }
 
 // ── On page load: resume polling if any cards still generating ───────
+function applyPresetFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  if ([...params.keys()].length === 0) return;
+
+  document.querySelectorAll('[data-unit]').forEach(panel => {
+    const unitCode = panel.dataset.unit;
+    const closedRadio = panel.querySelector(`input[name="${unitCode}_toggle"][value="closed"]`);
+    if (closedRadio) closedRadio.checked = true;
+    panel.querySelectorAll('[data-attr] input[type="radio"]').forEach(r => { r.checked = false; });
+  });
+
+  document.querySelectorAll('[data-unit] [data-attr]').forEach(group => {
+    const attrType = group.dataset.attr;
+    if (!params.has(attrType)) return;
+    const desired = params.get(attrType);
+    const target = Array.from(group.querySelectorAll('input[type="radio"]')).find(r => r.value === desired);
+    if (!target) return;
+    target.checked = true;
+    const panel = group.closest('[data-unit]');
+    if (!panel) return;
+    const openRadio = panel.querySelector(`input[name="${panel.dataset.unit}_toggle"][value="open"]`);
+    if (openRadio) openRadio.checked = true;
+  });
+
+  document.querySelectorAll('[data-unit]').forEach(panel => toggleUnit(panel.dataset.unit));
+
+  if (params.has('level')) {
+    const level = Number.parseInt(params.get('level'), 10);
+    if (!Number.isNaN(level)) {
+      document.getElementById('level-slider').value = String(level);
+      document.getElementById('level-display').textContent = String(level);
+    }
+  }
+
+  if (params.has('rarity')) {
+    const manualRadio = document.querySelector('input[name="rarity_mode"][value="manual"]');
+    if (manualRadio) manualRadio.checked = true;
+    toggleRaritySelect();
+    document.getElementById('rarity-select').value = params.get('rarity');
+  }
+
+  if (params.has('nickname')) {
+    document.getElementById('nickname-input').value = params.get('nickname');
+  }
+
+  if (params.has('seed')) {
+    document.getElementById('seed-input').value = params.get('seed');
+  }
+}
+
+// ?? On page load: resume polling if any cards still generating ???????
 document.addEventListener('DOMContentLoaded', () => {
-  fetch('/api/admin/simulation/cards').then(r => r.json()).then(cards => {
+  applyPresetFromQuery();
+  fetch('/api/admin/simulation/cards', {cache: 'no-store'}).then(r => r.json()).then(cards => {
     const stillGoing = cards.some(c => c.status === 'generating' || c.status === 'pending');
     if (stillGoing) startPolling();
   }).catch(() => {});

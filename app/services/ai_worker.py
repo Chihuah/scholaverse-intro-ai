@@ -28,6 +28,8 @@ class AIWorkerService(ABC):
         student_nickname: str,
         card_config: dict,
         learning_data: dict,
+        seed: int | None = None,
+        ollama_model_override: str | None = None,
     ) -> str:
         """Submit learning data + card config to ai-worker for prompt generation
         and image creation. Returns job_id.
@@ -66,6 +68,8 @@ class RealAIWorkerService(AIWorkerService):
         student_nickname: str,
         card_config: dict,
         learning_data: dict,
+        seed: int | None = None,
+        ollama_model_override: str | None = None,
     ) -> str:
         job_id = str(uuid.uuid4())
         payload = {
@@ -76,6 +80,8 @@ class RealAIWorkerService(AIWorkerService):
             "card_config": card_config,
             "learning_data": learning_data,
             "style_hint": "Hearthstone-style fantasy card art, digital oil painting, warm dramatic lighting, rich saturated colors, painterly brushwork, detailed character portrait",
+            "seed": seed,
+            "ollama_model_override": ollama_model_override,
             "callback_url": _callback_url(),
         }
         try:
@@ -120,14 +126,18 @@ class MockAIWorkerService(AIWorkerService):
         student_nickname: str,
         card_config: dict,
         learning_data: dict,
+        seed: int | None = None,
+        ollama_model_override: str | None = None,
     ) -> str:
         job_id = str(uuid.uuid4())
         self._jobs[job_id] = {
+            "ollama_model_override": ollama_model_override,
             "status": "generating",
             "card_id": card_id,
             "student_id": student_id,
             "student_nickname": student_nickname,
             "card_config": card_config,
+            "requested_seed": seed,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "image_path": None,
             "thumbnail_path": None,
@@ -174,6 +184,7 @@ class MockAIWorkerService(AIWorkerService):
                         "image_path": image_path,
                         "thumbnail_path": thumbnail_path,
                         "generated_at": generated_at,
+                        "seed": self._jobs[job_id].get("requested_seed"),
                     },
                 )
         except httpx.HTTPError as e:
