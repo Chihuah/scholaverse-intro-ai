@@ -255,6 +255,39 @@ async def admin_student_detail(
     )
 
 
+@router.get("/admin/cards/{card_id}")
+async def admin_card_detail(
+    card_id: int,
+    request: Request,
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """管理者卡牌詳情頁面。"""
+    result = await db.execute(
+        select(Card, Student)
+        .join(Student, Card.student_id == Student.id)
+        .where(Card.id == card_id)
+    )
+    row = result.one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="找不到此卡牌。")
+
+    card, student = row
+    return templates.TemplateResponse(
+        request,
+        "admin/simulation_card_detail.html",
+        {
+            "user": user,
+            "card": card,
+            "student": student,
+            "page_title": f"卡牌詳情 #{card.id}",
+            "back_url": f"/admin/students/{student.id}",
+            "back_label": f"返回 {student.name} 的資料",
+            "show_admin_debug": True,
+        },
+    )
+
+
 @router.get("/admin/import")
 async def admin_import_page(
     request: Request,
@@ -1548,5 +1581,13 @@ async def admin_simulation_card_detail(
     return templates.TemplateResponse(
         request,
         "admin/simulation_card_detail.html",
-        {"user": user, "card": card},
+        {
+            "user": user,
+            "card": card,
+            "student": sim_student,
+            "page_title": f"模擬卡牌詳情 #{card.id}",
+            "back_url": "/admin/simulation",
+            "back_label": "返回模擬生圖",
+            "show_admin_debug": True,
+        },
     )

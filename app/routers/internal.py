@@ -49,6 +49,10 @@ class GenerationCallbackBody(BaseModel):
     thumbnail_path: str | None = None
     generated_at: str | None = None
     prompt: str | None = None
+    final_prompt: str | None = None
+    llm_model: str | None = None
+    lora_used: str | None = None
+    seed: int | None = None
     error: str | None = None
 
 
@@ -75,6 +79,14 @@ async def generation_callback(
         card.thumbnail_url = _image_path_to_url(body.thumbnail_path)
         if body.prompt:
             card.prompt = body.prompt
+        if body.final_prompt:
+            card.final_prompt = body.final_prompt
+        if body.llm_model:
+            card.llm_model = body.llm_model
+        if body.lora_used is not None:
+            card.lora_used = body.lora_used
+        if body.seed is not None:
+            card.seed = body.seed
         if body.generated_at:
             try:
                 card.generated_at = datetime.fromisoformat(body.generated_at)

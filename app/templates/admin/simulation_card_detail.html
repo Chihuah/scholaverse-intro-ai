@@ -1,24 +1,20 @@
 {% extends "base.html" %}
-{% block title %}卡牌詳情 #{{ card.id }}{% endblock %}
+{% block title %}{{ page_title or ("卡牌詳情 #" ~ card.id) }}{% endblock %}
 {% block content %}
 
-<!-- Header -->
 <div class="flex items-center gap-3 w-full shrink-0">
-  <a href="/admin/simulation" class="flex items-center gap-1 font-tc text-xs text-[var(--rpg-text-secondary)] hover:text-[var(--rpg-gold)] transition-colors">
+  <a href="{{ back_url or '/admin/simulation' }}" class="flex items-center gap-1 font-tc text-xs text-[var(--rpg-text-secondary)] hover:text-[var(--rpg-gold)] transition-colors">
     <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-    返回模擬生圖
+    {{ back_label or "返回模擬生圖" }}
   </a>
   <span class="text-[var(--rpg-gold-dark)]">|</span>
   <div class="flex items-center gap-2">
     <i data-lucide="image" class="w-4 h-4 text-[var(--rpg-gold)]"></i>
-    <h1 class="font-tc text-sm font-black text-[var(--rpg-gold)]">卡牌詳情 #{{ card.id }}</h1>
+    <h1 class="font-tc text-sm font-black text-[var(--rpg-gold)]">{{ page_title or ("卡牌詳情 #" ~ card.id) }}</h1>
   </div>
 </div>
 
-<!-- Main layout: card image + prompt side by side -->
 <div class="flex flex-col lg:flex-row gap-6 w-full shrink-0">
-
-  <!-- Left: Card image -->
   <div class="flex flex-col items-center gap-3 shrink-0">
     {% if card.image_url %}
     <a href="{{ card.image_url }}" target="_blank" title="開啟原圖">
@@ -46,8 +42,13 @@
     </div>
     {% endif %}
 
-    <!-- Card meta -->
     <div class="rounded p-3 bg-[var(--rpg-bg-panel)] border border-[var(--rpg-gold-dark)]/40 w-full" style="max-width:220px;">
+      {% if student %}
+      <div class="flex justify-between items-center mb-1 gap-2">
+        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">學生</span>
+        <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] text-right">{{ student.name }}{% if student.student_id %}?{{ student.student_id }}?{% endif %}</span>
+      </div>
+      {% endif %}
       <div class="flex justify-between items-center mb-1">
         <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">狀態</span>
         <span class="font-tc text-[10px] font-bold
@@ -83,42 +84,78 @@
     </div>
   </div>
 
-  <!-- Right: Prompt display -->
   <div class="flex flex-col gap-3 flex-1 min-w-0">
     <div class="flex items-center gap-2">
-      <i data-lucide="scroll-text" class="w-4 h-4 text-[var(--rpg-gold)]"></i>
-      <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">完整生成提示詞</span>
+      <i data-lucide="bot" class="w-4 h-4 text-[var(--rpg-gold)]"></i>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">LLM 提示詞</span>
     </div>
-
     {% if card.prompt %}
-    <div class="rounded p-4 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]/40 flex-1">
+    <div class="rounded p-4 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]/40">
       <p class="font-tc text-xs leading-relaxed text-[var(--rpg-text-primary)] whitespace-pre-wrap break-words">{{ card.prompt }}</p>
     </div>
-    <button onclick="copyPrompt()"
-            class="self-start flex items-center gap-1.5 rounded px-3 py-1.5
-                   bg-[var(--rpg-bg-panel)] border border-[var(--rpg-gold-dark)]/60
-                   font-tc text-xs text-[var(--rpg-text-secondary)]
-                   hover:text-[var(--rpg-gold)] hover:border-[var(--rpg-gold)] transition-colors">
-      <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-      複製提示詞
-    </button>
     {% elif card.status in ("completed",) %}
     <div class="rounded p-4 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]/40">
-      <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">
-        此卡牌在記錄提示詞功能上線前生成，提示詞未保存。
-      </p>
+      <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">此卡牌在記錄提示詞功能上線前生成，LLM 提示詞未保存。</p>
     </div>
     {% elif card.status in ("generating", "pending") %}
     <div class="rounded p-4 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]/40">
-      <p class="font-tc text-xs text-[var(--rpg-warning)]">生成中，提示詞將在完成後顯示。</p>
+      <p class="font-tc text-xs text-[var(--rpg-warning)]">生成中，LLM 提示詞將在完成後顯示。</p>
     </div>
     {% else %}
     <div class="rounded p-4 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]/40">
-      <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">提示詞不可用。</p>
+      <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">LLM 提示詞不可用。</p>
     </div>
     {% endif %}
 
-    <!-- Config snapshot -->
+    <div class="flex items-center gap-2 mt-2">
+      <i data-lucide="wand-sparkles" class="w-4 h-4 text-[var(--rpg-gold)]"></i>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">最終生圖提示詞</span>
+    </div>
+    {% if card.final_prompt %}
+    <div class="rounded p-4 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]/40">
+      <p class="font-tc text-xs leading-relaxed text-[var(--rpg-text-primary)] whitespace-pre-wrap break-words">{{ card.final_prompt }}</p>
+    </div>
+    {% elif card.status in ("completed",) %}
+    <div class="rounded p-4 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]/40">
+      <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">此卡牌在記錄最終提示詞功能上線前生成，最終提示詞未保存。</p>
+    </div>
+    {% elif card.status in ("generating", "pending") %}
+    <div class="rounded p-4 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]/40">
+      <p class="font-tc text-xs text-[var(--rpg-warning)]">生成中，最終提示詞將在完成後顯示。</p>
+    </div>
+    {% else %}
+    <div class="rounded p-4 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]/40">
+      <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">最終提示詞不可用。</p>
+    </div>
+    {% endif %}
+
+    {% if show_admin_debug %}
+    <div class="flex items-center gap-2 mt-2">
+      <i data-lucide="bug" class="w-4 h-4 text-[var(--rpg-gold)]"></i>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-text-primary)]">生成參數</span>
+    </div>
+    <div class="rounded p-3 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]/40">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div class="flex justify-between gap-3">
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">LLM 模型</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] break-all text-right">{{ card.llm_model or '-' }}</span>
+        </div>
+        <div class="flex justify-between gap-3">
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">LoRA</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] break-all text-right">{{ card.lora_used or '-' }}</span>
+        </div>
+        <div class="flex justify-between gap-3">
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">Seed</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] text-right">{{ card.seed if card.seed is not none else '-' }}</span>
+        </div>
+        <div class="flex justify-between gap-3">
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">Job ID</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] break-all text-right">{{ card.job_id or '-' }}</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     {% if card.config_snapshot %}
     <div class="flex items-center gap-2 mt-2">
       <i data-lucide="settings" class="w-4 h-4 text-[var(--rpg-gold)]"></i>
@@ -129,23 +166,6 @@
     </div>
     {% endif %}
   </div>
-
 </div>
 
-{% endblock %}
-
-{% block scripts_extra %}
-<script>
-function copyPrompt() {
-  const text = {{ card.prompt | tojson if card.prompt else "" }};
-  if (!text) return;
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = event.currentTarget;
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i>已複製';
-    if (window.lucide) lucide.createIcons();
-    setTimeout(() => { btn.innerHTML = orig; if (window.lucide) lucide.createIcons(); }, 2000);
-  });
-}
-</script>
 {% endblock %}

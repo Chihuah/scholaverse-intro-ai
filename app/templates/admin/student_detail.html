@@ -168,7 +168,7 @@
       style="width:73px;">
       <!-- 縮圖 (220×320 → 33% = 73×107) -->
       {% if card.thumbnail_url %}
-      <a href="{{ card.image_url }}" target="_blank" title="#{{ card.id }} {{ card.rarity or '' }} Lv.{{ card.level_number or '?' }}">
+      <a href="/admin/cards/{{ card.id }}" title="#{{ card.id }} {{ card.rarity or '' }} Lv.{{ card.level_number or '?' }}">
         <img src="{{ card.thumbnail_url }}" alt="card #{{ card.id }}"
              style="width:73px;height:107px;object-fit:cover;display:block;">
       </a>
