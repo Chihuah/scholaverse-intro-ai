@@ -61,3 +61,21 @@ def test_rarity_table_matches_course_progression():
         (81, 90, {"N": 5, "R": 14, "SR": 28, "SSR": 36, "UR": 17}),
         (91, 100, {"N": 2, "R": 10, "SR": 22, "SSR": 40, "UR": 26}),
     ]
+
+
+def test_border_style_follows_rarity():
+    scoring = load_scoring_module()
+
+    assert scoring.RARITY_BORDER_STYLE == {
+        "N": "bronze",
+        "R": "steel",
+        "SR": "silver",
+        "SSR": "gold",
+        "UR": "prismatic",
+    }
+    assert scoring.determine_border_style("N") == "bronze"
+    assert scoring.determine_border_style("R") == "steel"
+    assert scoring.determine_border_style("SR") == "silver"
+    assert scoring.determine_border_style("SSR") == "gold"
+    assert scoring.determine_border_style("UR") == "prismatic"
+    assert scoring.determine_border_style("unknown") == "bronze"

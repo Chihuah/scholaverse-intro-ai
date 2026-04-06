@@ -136,17 +136,15 @@ async def generate_card(
         "overall_completion": round(total_exp_sum / 6, 1),
     }
 
-    # 3. Determine border and level from scoring rules
+    # 3. Determine level, rarity, and border from scoring rules
     from app.services.scoring import calculate_card_level, determine_border_style, roll_rarity
 
     level = calculate_card_level(total_exp_sum)
-    border = determine_border_style(count * 3)  # rough estimate: ~3 weeks per unit
-
-    card_config["border"] = "copper"   # 暫定一律銅色，後續依設計決定
-    card_config["level"] = level        # 傳送完整 1~100 等級給 ai-worker
-
-    # 稀有度：依 LV 機率骰選，存入 card_config 供 ai-worker 使用
     rarity = roll_rarity(level)
+    border = determine_border_style(rarity)
+
+    card_config["border"] = border
+    card_config["level"] = level        # 傳送完整 1~100 等級給 ai-worker
     card_config["rarity"] = rarity
 
     # expression / pose 未解鎖時不填預設值，由 ai-worker LLM 創意發揮
@@ -173,7 +171,7 @@ async def generate_card(
         student_id=user.id,
         config_snapshot=config_snapshot,
         status="pending",
-        border_style="copper",
+        border_style=border,
         level_number=level,
         rarity=rarity,
         is_latest=True,

@@ -2061,7 +2061,7 @@ async def api_admin_simulation_generate(
 ):
     """送出模擬生圖請求。"""
     from app.services.ai_worker import get_ai_worker_service
-    from app.services.scoring import roll_rarity
+    from app.services.scoring import determine_border_style, roll_rarity
 
     body = await request.json()
     card_config: dict = body.get("card_config", {})
@@ -2080,9 +2080,10 @@ async def api_admin_simulation_generate(
             raise HTTPException(status_code=400, detail="Seed ??????????? -1 / ??????")
 
     rarity = roll_rarity(level) if rarity_input == "auto" else rarity_input
+    border = determine_border_style(rarity)
     card_config["level"] = level
     card_config["rarity"] = rarity
-    card_config["border"] = "copper"
+    card_config["border"] = border
 
     sim_student = await _get_or_create_simulation_student(db)
 
@@ -2096,7 +2097,7 @@ async def api_admin_simulation_generate(
         student_id=sim_student.id,
         config_snapshot=json.dumps(snapshot_for_storage),
         status="pending",
-        border_style="copper",
+        border_style=border,
         level_number=level,
         rarity=rarity,
         is_latest=False,

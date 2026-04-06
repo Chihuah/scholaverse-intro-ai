@@ -484,12 +484,19 @@ def calculate_card_level(total_exp_sum: float) -> int:
     return max(1, level)
 
 
-def determine_border_style(weeks_completed: int) -> str:
-    """Return border style based on learning weeks completed.
+RARITY_BORDER_STYLE: dict[str, str] = {
+    "N": "bronze",
+    "R": "steel",
+    "SR": "silver",
+    "SSR": "gold",
+    "UR": "prismatic",
+}
 
-    暫時一律回傳 copper，待後續依單元六或稀有度決定邊框設計。
-    """
-    return "copper"
+
+def determine_border_style(rarity: str) -> str:
+    """Return border style based on card rarity."""
+    normalized = str(rarity or "N").upper()
+    return RARITY_BORDER_STYLE.get(normalized, RARITY_BORDER_STYLE["N"])
 
 
 # ===================================================================
