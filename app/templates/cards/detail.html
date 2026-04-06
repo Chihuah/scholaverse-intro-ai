@@ -14,11 +14,26 @@
   <!-- Left: Card image (portrait 880x1280) — takes ~45% on desktop -->
   <div class="flex justify-center shrink-0 lg:w-[45%]">
     <div class="w-full max-w-[480px]" style="aspect-ratio: 880/1280;">
-      {% set border_colors = {'copper': '#b87333', 'silver': '#c0c0c0', 'gold': '#ffd700'} %}
+      {% set border_colors = {
+        'bronze': '#b87333',
+        'copper': '#b87333',
+        'steel': '#7f8c9a',
+        'silver': '#c0c0c0',
+        'gold': '#ffd700',
+        'prismatic': '#d946ef'
+      } %}
+      {% set border_labels = {
+        'bronze': '青銅邊框',
+        'copper': '青銅邊框',
+        'steel': '鋼鐵邊框',
+        'silver': '銀色邊框',
+        'gold': '金色邊框',
+        'prismatic': '幻彩邊框'
+      } %}
       {% set bc = border_colors.get(card.border_style, '#b87333') %}
       <div id="card-image-container" class="w-full h-full rounded overflow-hidden"
            style="border: 3px solid {{ bc }};
-                  {% if card.border_style == 'gold' %}box-shadow: 0 0 16px 3px rgba(255,215,0,0.4);{% endif %}">
+                  {% if card.border_style == 'gold' %}box-shadow: 0 0 16px 3px rgba(255,215,0,0.4);{% elif card.border_style == 'prismatic' %}box-shadow: 0 0 16px 3px rgba(217,70,239,0.35);{% endif %}">
         {% if card.image_url %}
         <img id="card-img" src="{{ card.image_url | safe_img_url }}" alt="卡牌" class="w-full h-full object-cover">
         {% elif card.status in ('pending', 'generating') %}
@@ -120,11 +135,10 @@
 
     <!-- Border info -->
     <div class="flex items-center gap-2 mt-auto pt-4 border-t border-[var(--rpg-gold-dark)]">
-      {% set border_labels = {'copper': '銅色邊框', 'silver': '銀色邊框', 'gold': '金色邊框'} %}
-      <i data-lucide="{% if card.border_style == 'gold' %}crown{% else %}shield{% endif %}"
+      <i data-lucide="{% if card.border_style == 'gold' %}crown{% elif card.border_style == 'prismatic' %}sparkles{% else %}shield{% endif %}"
          class="w-4 h-4" style="color: {{ bc }}"></i>
       <span class="font-tc text-xs font-bold" style="color: {{ bc }}">
-        {{ border_labels.get(card.border_style, '銅色邊框') }}
+        {{ border_labels.get(card.border_style, '青銅邊框') }}
       </span>
     </div>
   </div>

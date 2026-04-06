@@ -24,14 +24,20 @@
     {% set border_style = latest_card.border_style if latest_card and latest_card.border_style else 'copper' %}
     {% if border_style == 'gold' %}
       {% set border_color = 'var(--rpg-border-gold)' %}
+    {% elif border_style == 'prismatic' %}
+      {% set border_color = '#d946ef' %}
     {% elif border_style == 'silver' %}
       {% set border_color = 'var(--rpg-border-silver)' %}
+    {% elif border_style == 'steel' %}
+      {% set border_color = '#7f8c9a' %}
+    {% elif border_style == 'bronze' or border_style == 'copper' %}
+      {% set border_color = 'var(--rpg-border-copper)' %}
     {% else %}
       {% set border_color = 'var(--rpg-border-copper)' %}
     {% endif %}
 
     <div class="w-40 h-56 md:w-[200px] md:h-[280px] rounded overflow-hidden"
-         style="border: 3px solid {{ border_color }};{% if border_style == 'gold' %} box-shadow: 0 0 12px 2px rgba(255,215,0,0.4);{% endif %}">
+         style="border: 3px solid {{ border_color }};{% if border_style == 'gold' %} box-shadow: 0 0 12px 2px rgba(255,215,0,0.4);{% elif border_style == 'prismatic' %} box-shadow: 0 0 12px 2px rgba(217,70,239,0.35);{% endif %}">
       {% if latest_card and latest_card.image_url %}
       <img src="{{ latest_card.image_url | safe_img_url }}" alt="角色卡牌" class="w-full h-full object-cover">
       {% else %}
@@ -46,10 +52,10 @@
       Lv.{{ latest_card.level_number if latest_card else '--' }}
     </span>
 
-    {% if latest_card and border_style == 'gold' %}
+    {% if latest_card and border_style in ['gold', 'prismatic'] %}
     <div class="flex items-center justify-center gap-1 w-full">
-      <i data-lucide="crown" class="w-3.5 h-3.5 text-[var(--rpg-gold-bright)]"></i>
-      <span class="font-tc text-xs font-bold text-[var(--rpg-gold-bright)]">金色邊框</span>
+      <i data-lucide="{% if border_style == 'gold' %}crown{% else %}sparkles{% endif %}" class="w-3.5 h-3.5" style="color: {{ border_color }}"></i>
+      <span class="font-tc text-xs font-bold" style="color: {{ border_color }}">{% if border_style == 'gold' %}金色邊框{% else %}幻彩邊框{% endif %}</span>
     </div>
     {% endif %}
   </div>

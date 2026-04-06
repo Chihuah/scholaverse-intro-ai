@@ -28,15 +28,21 @@
     {% set border_style = hero_card.border_style if hero_card.border_style else 'copper' %}
     {% if border_style == 'gold' %}
       {% set border_color = 'var(--rpg-border-gold)' %}
+    {% elif border_style == 'prismatic' %}
+      {% set border_color = '#d946ef' %}
     {% elif border_style == 'silver' %}
       {% set border_color = 'var(--rpg-border-silver)' %}
+    {% elif border_style == 'steel' %}
+      {% set border_color = '#7f8c9a' %}
+    {% elif border_style == 'bronze' or border_style == 'copper' %}
+      {% set border_color = 'var(--rpg-border-copper)' %}
     {% else %}
       {% set border_color = 'var(--rpg-border-copper)' %}
     {% endif %}
 
     <div class="flex flex-col items-center gap-1.5 shrink-0 snap-center">
       <div class="w-36 h-52 md:w-[180px] md:h-[260px] rounded overflow-hidden"
-           style="border: 3px solid {{ border_color }};{% if border_style == 'gold' %} box-shadow: 0 0 8px 0 rgba(255,215,0,0.27);{% endif %}">
+           style="border: 3px solid {{ border_color }};{% if border_style == 'gold' %} box-shadow: 0 0 8px 0 rgba(255,215,0,0.27);{% elif border_style == 'prismatic' %} box-shadow: 0 0 8px 0 rgba(217,70,239,0.3);{% endif %}">
         {% if hero_card.image_url %}
         <img src="{{ hero_card.image_url | safe_img_url }}"
              alt="{{ hero_card.student.name if hero_card.student else '冒險者' }}"

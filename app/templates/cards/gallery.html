@@ -22,12 +22,26 @@
 <!-- Card grid -->
 <div class="flex flex-wrap gap-4 items-start justify-center
             md:gap-6">
-  {% set border_colors = {'copper': '#b87333', 'silver': '#c0c0c0', 'gold': '#ffd700'} %}
-  {% set border_labels = {'copper': '銅色邊框', 'silver': '銀色邊框', 'gold': '金色邊框'} %}
+  {% set border_colors = {
+    'bronze': '#b87333',
+    'copper': '#b87333',
+    'steel': '#7f8c9a',
+    'silver': '#c0c0c0',
+    'gold': '#ffd700',
+    'prismatic': '#d946ef'
+  } %}
+  {% set border_labels = {
+    'bronze': '青銅邊框',
+    'copper': '青銅邊框',
+    'steel': '鋼鐵邊框',
+    'silver': '銀色邊框',
+    'gold': '金色邊框',
+    'prismatic': '幻彩邊框'
+  } %}
 
   {% for card in cards %}
     {% set border_color = border_colors.get(card.border_style, '#b87333') %}
-    {% set border_label = border_labels.get(card.border_style, '銅色邊框') %}
+    {% set border_label = border_labels.get(card.border_style, '青銅邊框') %}
 
     <a href="/cards/{{ card.id }}"
        class="flex flex-col items-center gap-2 cursor-pointer group no-underline">
