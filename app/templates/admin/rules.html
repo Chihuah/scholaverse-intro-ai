@@ -56,6 +56,11 @@
         <span class="font-tc text-xs font-bold text-[var(--rpg-gold)]">屬性規則設定</span>
       </div>
       <div class="p-4 flex flex-col gap-4">
+        <div class="rounded bg-[var(--rpg-bg-card)]/40 border border-[var(--rpg-gold-dark)] px-4 py-3">
+          <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">
+            編輯時修改的是各 tier 的原始規則；頁面顯示的是向下包容後、自動去重的有效結果。
+          </p>
+        </div>
         {% for unit_code, attr_types in grouped.items() %}
         <div class="rounded bg-[var(--rpg-bg-card)]/30 border border-[var(--rpg-gold-dark)] overflow-hidden">
           <div class="flex items-center gap-2 px-4 py-3 bg-[var(--rpg-bg-card)] border-b border-[var(--rpg-gold-dark)]/60">
@@ -82,15 +87,15 @@
                   <div class="min-w-[400px]">
                     <div class="flex items-center px-4 py-2 border-b border-[var(--rpg-gold-dark)]/50">
                       <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-14">Tier</span>
-                      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] flex-1">Options</span>
-                      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] flex-1">Labels</span>
+                      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] flex-1">有效 Options</span>
+                      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] flex-1">有效 Labels</span>
                       <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-14 text-center"></span>
                     </div>
                     {% for rule in rules %}
                     <div id="rule-row-{{ rule.id }}" class="flex items-center px-4 py-2 border-b border-[var(--rpg-bg-input)] {% if loop.index is odd %}bg-[var(--rpg-bg-card)]/20{% endif %}">
                       <span class="font-pixel text-xs w-14 {% if rule.tier == 'S' %}text-[var(--rpg-gold-bright)]{% elif rule.tier == 'A' %}text-[var(--rpg-gold)]{% elif rule.tier == 'B' %}text-[var(--rpg-text-primary)]{% elif rule.tier == 'C' %}text-[var(--rpg-text-secondary)]{% else %}text-[var(--rpg-text-secondary)]{% endif %}">{{ rule.tier }}</span>
-                      <span class="font-tc text-xs text-[var(--rpg-text-primary)] flex-1" id="rule-options-{{ rule.id }}">{{ rule.options | join(', ') }}</span>
-                      <span class="font-tc text-xs text-[var(--rpg-text-secondary)] flex-1" id="rule-labels-{{ rule.id }}">{{ rule.labels.values() | join(', ') }}</span>
+                      <span class="font-tc text-xs text-[var(--rpg-text-primary)] flex-1" id="rule-options-{{ rule.id }}">{{ rule.effective_options | join(', ') }}</span>
+                      <span class="font-tc text-xs text-[var(--rpg-text-secondary)] flex-1" id="rule-labels-{{ rule.id }}">{{ rule.effective_labels.values() | join(', ') }}</span>
                       <button type="button"
                               class="w-14 text-center rounded px-2 py-1 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)] font-tc text-xs font-bold text-[var(--rpg-gold)] hover:border-[var(--rpg-gold)] transition-colors"
                               data-rule-id="{{ rule.id }}"
@@ -236,13 +241,9 @@ async function saveRule() {
       showToast(err.detail || '儲存失敗', 'error');
       return;
     }
-    const data = await resp.json();
-    const optionsCell = document.getElementById('rule-options-' + ruleId);
-    const labelsCell = document.getElementById('rule-labels-' + ruleId);
-    if (optionsCell) optionsCell.textContent = data.options.join(', ');
-    if (labelsCell) labelsCell.textContent = Object.values(data.labels).join(', ');
     showToast('規則已更新', 'success');
     closeEditModal();
+    window.setTimeout(() => window.location.reload(), 300);
   } catch (e) {
     showToast('網路錯誤', 'error');
   }

@@ -134,14 +134,27 @@
 
 <!-- Submit Button -->
 <div class="w-full shrink-0">
-  <button onclick="submitSimulation()" id="submit-btn"
-          class="flex items-center gap-2 rounded px-6 py-2.5
-                 bg-[var(--rpg-gold)] text-[var(--rpg-bg-dark)]
-                 font-tc text-xs font-black
-                 hover:opacity-90 transition-opacity disabled:opacity-50">
-    <i data-lucide="sparkles" class="w-4 h-4"></i>
-    送出模擬生圖
-  </button>
+  <div class="flex flex-wrap items-center gap-3">
+    <button type="button"
+            onclick="randomizeSimulationAttributes()"
+            id="randomize-btn"
+            class="flex items-center gap-2 rounded px-4 py-2.5
+                   bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)]
+                   text-[var(--rpg-text-primary)]
+                   font-tc text-xs font-black
+                   hover:border-[var(--rpg-gold)] transition-colors">
+      <i data-lucide="dice-5" class="w-4 h-4 text-[var(--rpg-gold)]"></i>
+      隨機挑選屬性
+    </button>
+    <button onclick="submitSimulation()" id="submit-btn"
+            class="flex items-center gap-2 rounded px-6 py-2.5
+                   bg-[var(--rpg-gold)] text-[var(--rpg-bg-dark)]
+                   font-tc text-xs font-black
+                   hover:opacity-90 transition-opacity disabled:opacity-50">
+      <i data-lucide="sparkles" class="w-4 h-4"></i>
+      送出模擬生圖
+    </button>
+  </div>
 </div>
 
 <!-- Divider + Results Header -->
@@ -238,6 +251,36 @@ function toggleUnit(unitCode) {
 function toggleRaritySelect() {
   const isManual = document.querySelector('input[name="rarity_mode"][value="manual"]').checked;
   document.getElementById('rarity-select').disabled = !isManual;
+}
+
+// ── Randomize simulation attributes ─────────────────────────────────
+function randomizeSimulationAttributes() {
+  document.querySelectorAll('[data-unit]').forEach(panel => {
+    const unitCode = panel.dataset.unit;
+    const openRadio = panel.querySelector(`input[name="${unitCode}_toggle"][value="open"]`);
+    const closedRadio = panel.querySelector(`input[name="${unitCode}_toggle"][value="closed"]`);
+    const shouldOpen = Math.random() >= 0.5;
+
+    if (shouldOpen && openRadio) {
+      openRadio.checked = true;
+    } else if (closedRadio) {
+      closedRadio.checked = true;
+    }
+
+    toggleUnit(unitCode);
+
+    panel.querySelectorAll('[data-attr]').forEach(group => {
+      const radios = Array.from(group.querySelectorAll('input[type="radio"]'));
+      radios.forEach(radio => { radio.checked = false; });
+
+      if (!shouldOpen || radios.length === 0) return;
+
+      const selected = radios[Math.floor(Math.random() * radios.length)];
+      selected.checked = true;
+    });
+  });
+
+  showToast('已隨機挑選各單元屬性。');
 }
 
 // ── Submit simulation ────────────────────────────────────────────────

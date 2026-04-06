@@ -29,6 +29,10 @@ class StorageService(ABC):
     async def get_metadata(self, card_id: int) -> dict:
         """Get image metadata for a card."""
 
+    @abstractmethod
+    async def delete_card_assets(self, card_id: int) -> dict:
+        """Delete storage-side files and metadata for one card."""
+
 
 class RealStorageService(StorageService):
     """Real implementation that calls vm-db-storage over HTTP."""
@@ -73,6 +77,26 @@ class RealStorageService(StorageService):
             logger.error("Failed to get metadata for card %d: %s", card_id, e)
             return {"error": str(e)}
 
+    async def delete_card_assets(self, card_id: int) -> dict:
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.delete(f"{self._base_url}/api/images/card/{card_id}")
+                if resp.status_code == 404:
+                    return {
+                        "card_id": card_id,
+                        "found": False,
+                        "deleted_files": 0,
+                        "deleted_image_rows": 0,
+                        "deleted_metadata_rows": 0,
+                    }
+                resp.raise_for_status()
+                data = resp.json()
+                data.setdefault("found", True)
+                return data
+        except httpx.HTTPError as e:
+            logger.error("Failed to delete storage assets for card %d: %s", card_id, e)
+            raise
+
 
 class MockStorageService(StorageService):
     """Mock implementation for development without vm-db-storage."""
@@ -108,6 +132,15 @@ class MockStorageService(StorageService):
             "dimensions": {"width": 768, "height": 1024},
             "file_size_bytes": 524288,
             "generated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+    async def delete_card_assets(self, card_id: int) -> dict:
+        return {
+            "card_id": card_id,
+            "found": True,
+            "deleted_files": 2,
+            "deleted_image_rows": 2,
+            "deleted_metadata_rows": 1,
         }
 
 

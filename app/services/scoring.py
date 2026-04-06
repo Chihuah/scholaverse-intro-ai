@@ -14,12 +14,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
+TIER_ORDER = ["S", "A", "B", "C", "D"]
+
 # ---------------------------------------------------------------------------
 # Score tier boundaries (inclusive)
 # ---------------------------------------------------------------------------
 TIER_S = (90, 100)  # Best
-TIER_A = (75, 89)
-TIER_B = (60, 74)
+TIER_A = (80, 89)
+TIER_B = (60, 79)
 TIER_C = (40, 59)
 TIER_D = (0, 39)    # Worst
 
@@ -46,11 +48,45 @@ def _tier(score: float) -> str:
         return "S"
     if score >= 80:
         return "A"
-    if score >= 70:
-        return "B"
     if score >= 60:
+        return "B"
+    if score >= 40:
         return "C"
     return "D"
+
+
+def _inclusive_tiers(tier: str) -> list[str]:
+    """Return the current tier plus all lower tiers."""
+    try:
+        start = TIER_ORDER.index(tier)
+    except ValueError:
+        return [tier]
+    return TIER_ORDER[start:]
+
+
+def _merge_tier_rule_payloads(rule_rows: list) -> tuple[list[str], dict[str, str]]:
+    """Merge tier rule rows in priority order and keep unique options only."""
+    merged_options: list[str] = []
+    merged_labels: dict[str, str] = {}
+    seen: set[str] = set()
+
+    for rule in rule_rows:
+        try:
+            options = json.loads(rule.options)
+            labels = json.loads(rule.labels)
+        except (json.JSONDecodeError, TypeError):
+            logger.warning("Invalid JSON in attribute_rule id=%s", getattr(rule, "id", None))
+            continue
+
+        for option in options:
+            if option in seen:
+                continue
+            seen.add(option)
+            merged_options.append(option)
+            if option in labels:
+                merged_labels[option] = labels[option]
+
+    return merged_options, merged_labels
 
 
 # ---------------------------------------------------------------------------
@@ -326,29 +362,28 @@ async def _get_available_options_from_db(
     result = await db.execute(
         select(AttributeRule).where(
             AttributeRule.unit_code == unit_code,
-            AttributeRule.tier == tier,
-        )
+            AttributeRule.tier.in_(_inclusive_tiers(tier)),
+        ).order_by(AttributeRule.sort_order)
     )
     rules = result.scalars().all()
 
     if not rules:
         return {}
 
-    # Index rules by attribute_type
-    rule_map: dict[str, AttributeRule] = {r.attribute_type: r for r in rules}
+    # Group rules by attribute_type, preserving higher-tier rows before lower-tier rows.
+    rule_map: dict[str, list[AttributeRule]] = {}
+    for rule in rules:
+        rule_map.setdefault(rule.attribute_type, []).append(rule)
+    for attr_rules in rule_map.values():
+        attr_rules.sort(key=lambda r: TIER_ORDER.index(r.tier) if r.tier in TIER_ORDER else len(TIER_ORDER))
 
     output: dict = {}
 
-    attr_types = sorted(rule_map.keys(), key=lambda a: rule_map[a].sort_order)
+    attr_types = sorted(rule_map.keys(), key=lambda a: min(r.sort_order for r in rule_map[a]))
 
     for attr_type in attr_types:
-        rule = rule_map[attr_type]
-
-        try:
-            options = json.loads(rule.options)
-            labels = json.loads(rule.labels)
-        except (json.JSONDecodeError, TypeError):
-            logger.warning("Invalid JSON in attribute_rule id=%s", rule.id)
+        options, labels = _merge_tier_rule_payloads(rule_map[attr_type])
+        if not options:
             continue
 
         # Apply weapon class affinity filter for weapon_type
@@ -401,13 +436,24 @@ import random as _random
 # ---------------------------------------------------------------------------
 
 # (level_min, level_max) → {rarity: weight}
+# 設計原則：
+# - 每 10 級一個機率階段，便於微調課程節奏
+# - 前期（1–30）以 N/R 為主，避免高稀有度過早通膨
+# - 中期（31–60）SR 成為主要進步獎勵，SSR 逐步開放
+# - 後期（61–80）SSR 明顯增加，UR 開始穩定出現
+# - 尾聲（81–100）SSR/UR 成為主要獎勵
 # 調整這張表即可改變機率分布（weight 總和不必為 100，相對比例即可）
 RARITY_TABLE: list[tuple[int, int, dict]] = [
-    (1,  20,  {"N": 70, "R": 25, "SR": 5,  "SSR": 0,  "UR": 0}),
-    (21, 40,  {"N": 40, "R": 40, "SR": 15, "SSR": 5,  "UR": 0}),
-    (41, 60,  {"N": 15, "R": 35, "SR": 30, "SSR": 15, "UR": 5}),
-    (61, 80,  {"N": 5,  "R": 20, "SR": 35, "SSR": 30, "UR": 10}),
-    (81, 100, {"N": 0,  "R": 10, "SR": 25, "SSR": 40, "UR": 25}),
+    (1, 10, {"N": 80, "R": 18, "SR": 2, "SSR": 0, "UR": 0}),
+    (11, 20, {"N": 70, "R": 25, "SR": 5, "SSR": 0, "UR": 0}),
+    (21, 30, {"N": 58, "R": 30, "SR": 10, "SSR": 2, "UR": 0}),
+    (31, 40, {"N": 46, "R": 36, "SR": 15, "SSR": 3, "UR": 0}),
+    (41, 50, {"N": 34, "R": 36, "SR": 22, "SSR": 7, "UR": 1}),
+    (51, 60, {"N": 22, "R": 32, "SR": 28, "SSR": 14, "UR": 4}),
+    (61, 70, {"N": 14, "R": 26, "SR": 32, "SSR": 22, "UR": 6}),
+    (71, 80, {"N": 10, "R": 20, "SR": 34, "SSR": 26, "UR": 10}),
+    (81, 90, {"N": 5, "R": 14, "SR": 28, "SSR": 36, "UR": 17}),
+    (91, 100, {"N": 2, "R": 10, "SR": 22, "SSR": 40, "UR": 26}),
 ]
 
 
@@ -428,10 +474,13 @@ def calculate_card_level(total_exp_sum: float) -> int:
 
     Each unit contributes 0–100 EXP (preview×20% + completion×40% + quiz×40%).
     unit_6 uses completion_rate as full weight.
-    Level = ceil(total / 6), clamped to 1–100.
+    Level = common round(total / 6), clamped to 1–100.
+
+    This matches the student progress page's Jinja `round` filter behavior
+    instead of the previous ceiling-based calculation.
     """
     clamped = max(0.0, min(600.0, total_exp_sum))
-    level = math.ceil(clamped / 6)
+    level = math.floor((clamped / 6) + 0.5)
     return max(1, level)
 
 

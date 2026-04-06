@@ -11,9 +11,9 @@ from urllib.parse import urlencode
 
 import httpx
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request, UploadFile, File
-from fastapi.responses import HTMLResponse
-from sqlalchemy import case, delete, select, func
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, UploadFile, File, Query
+from fastapi.responses import HTMLResponse, StreamingResponse
+from sqlalchemy import case, delete, select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -33,6 +33,7 @@ from app.services.excel_import import (
     parse_score_excel,
 )
 from app.config import settings
+from app.services.storage import get_storage_service
 from app.services.system_settings import (
     OLLAMA_MODEL_SUGGESTIONS,
     SYSTEM_SETTING_LABELS,
@@ -46,6 +47,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["admin"])
 _PREVIEW_RATES_FILENAME = "preview_rates.csv"
+_TIER_ORDER = ["S", "A", "B", "C", "D"]
 
 
 def _parse_card_snapshot(card: Card) -> dict:
@@ -60,6 +62,32 @@ def _parse_card_snapshot(card: Card) -> dict:
         except Exception:
             return {}
     return {}
+
+
+def _inclusive_tiers_for_admin(tier: str) -> list[str]:
+    try:
+        start = _TIER_ORDER.index(tier)
+    except ValueError:
+        return [tier]
+    return _TIER_ORDER[start:]
+
+
+def _merge_rule_dicts(rule_dicts: list[dict]) -> tuple[list[str], dict[str, str]]:
+    merged_options: list[str] = []
+    merged_labels: dict[str, str] = {}
+    seen: set[str] = set()
+
+    for rule in rule_dicts:
+        for option in rule["options"]:
+            if option in seen:
+                continue
+            seen.add(option)
+            merged_options.append(option)
+            label = rule["labels"].get(option)
+            if label is not None:
+                merged_labels[option] = label
+
+    return merged_options, merged_labels
 
 
 def _build_simulation_reuse_url(card: Card, student: Student | None = None) -> str:
@@ -93,6 +121,17 @@ def _build_simulation_reuse_url(card: Card, student: Student | None = None) -> s
 
     query = urlencode(params)
     return f"/admin/simulation?{query}" if query else "/admin/simulation"
+
+
+def _student_unit_exp(unit: Unit, lr: LearningRecord | None) -> float | None:
+    if lr is None:
+        return None
+    if unit.code == "unit_6":
+        return lr.completion_rate
+    pv = (lr.preview_score or 0.0) * 0.2
+    cv = (lr.completion_rate or 0.0) * 0.4
+    qv = (lr.quiz_score or 0.0) * 0.4
+    return round(pv + cv + qv, 1)
 
 
 # ─── HTML Pages ───────────────────────────────────────────────────────
@@ -219,22 +258,12 @@ async def admin_students(
         for lr in lr_result.scalars().all():
             lr_map.setdefault(lr.student_id, {})[lr.unit_id] = lr
 
-    def _exp(unit: Unit, lr: LearningRecord | None) -> float | None:
-        if lr is None:
-            return None
-        if unit.code == "unit_6":
-            return lr.completion_rate  # may be None
-        pv = (lr.preview_score or 0.0) * 0.2
-        cv = (lr.completion_rate or 0.0) * 0.4
-        qv = (lr.quiz_score or 0.0) * 0.4
-        return round(pv + cv + qv, 1)
-
     student_data = []
     for s in students:
         unit_exps = []
         for u in units:
             lr = lr_map.get(s.id, {}).get(u.id)
-            unit_exps.append({"unit": u, "exp": _exp(u, lr)})
+            unit_exps.append({"unit": u, "exp": _student_unit_exp(u, lr)})
         student_data.append({
             "student": s,
             "card_count": card_counts.get(s.id, 0),
@@ -245,6 +274,81 @@ async def admin_students(
         request,
         "admin/students.html",
         {"user": user, "student_data": student_data, "search_query": q, "units": units},
+    )
+
+
+@router.get("/admin/students/export-selected")
+async def admin_students_export_selected(
+    student_ids: list[int] = Query(...),
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Download selected student summary rows as CSV."""
+    if not student_ids:
+        raise HTTPException(status_code=400, detail="請先勾選至少一位學生")
+
+    role_order = case(
+        (Student.role == "admin", 0),
+        (Student.role == "teacher", 1),
+        else_=2,
+    )
+    students = (
+        await db.execute(
+            select(Student)
+            .where(Student.id.in_(student_ids))
+            .order_by(role_order, Student.student_id.asc())
+        )
+    ).scalars().all()
+
+    if not students:
+        raise HTTPException(status_code=404, detail="找不到指定學生")
+
+    selected_ids = [s.id for s in students]
+    units = (
+        await db.execute(select(Unit).order_by(Unit.sort_order))
+    ).scalars().all()
+
+    card_counts: dict[int, int] = {}
+    cc_result = await db.execute(
+        select(Card.student_id, func.count(Card.id))
+        .where(Card.student_id.in_(selected_ids))
+        .group_by(Card.student_id)
+    )
+    card_counts = {row[0]: row[1] for row in cc_result.all()}
+
+    lr_map: dict[int, dict[int, LearningRecord]] = {}
+    lr_result = await db.execute(
+        select(LearningRecord).where(LearningRecord.student_id.in_(selected_ids))
+    )
+    for lr in lr_result.scalars().all():
+        lr_map.setdefault(lr.student_id, {})[lr.unit_id] = lr
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    headers = ["學號", "姓名", "Email", "角色", "代幣", "卡牌"]
+    headers.extend([f"Ch{i}" for i in range(1, len(units) + 1)])
+    writer.writerow(headers)
+
+    for student in students:
+        email = "" if (student.email or "").startswith("__unbound__") else (student.email or "")
+        row = [
+            student.student_id or "",
+            student.name or "",
+            email,
+            student.role or "",
+            student.tokens or 0,
+            card_counts.get(student.id, 0),
+        ]
+        for unit in units:
+            exp = _student_unit_exp(unit, lr_map.get(student.id, {}).get(unit.id))
+            row.append("" if exp is None else exp)
+        writer.writerow(row)
+
+    filename = f"selected-students-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue().encode("utf-8-sig")]),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
@@ -1402,6 +1506,20 @@ async def admin_rules(
             "sort_order": rule.sort_order,
         })
 
+    for attr_types in grouped.values():
+        for attr_type, rule_rows in attr_types.items():
+            rule_rows.sort(key=lambda r: _TIER_ORDER.index(r["tier"]) if r["tier"] in _TIER_ORDER else len(_TIER_ORDER))
+            by_tier = {row["tier"]: row for row in rule_rows}
+            for row in rule_rows:
+                effective_rows = [
+                    by_tier[tier]
+                    for tier in _inclusive_tiers_for_admin(row["tier"])
+                    if tier in by_tier
+                ]
+                effective_options, effective_labels = _merge_rule_dicts(effective_rows)
+                row["effective_options"] = effective_options
+                row["effective_labels"] = effective_labels
+
     system_settings = await get_system_settings_map(db)
 
     return templates.TemplateResponse(
@@ -1599,6 +1717,30 @@ async def api_admin_queue(
     }
 
 
+def _apply_generation_history_filters(query, status_filter: str):
+    query = query.where(
+        Card.job_id.isnot(None),
+        Card.history_visible.is_(True),
+    )
+    if status_filter in ("generating", "completed", "failed"):
+        query = query.where(Card.status == status_filter)
+    return query
+
+
+async def _get_generation_history_card(db: AsyncSession, card_id: int) -> Card:
+    card = (
+        await db.execute(
+            select(Card).where(
+                Card.id == card_id,
+                Card.job_id.isnot(None),
+            )
+        )
+    ).scalar_one_or_none()
+    if card is None:
+        raise HTTPException(status_code=404, detail="找不到此生圖記錄。")
+    return card
+
+
 @router.get("/admin/generation-history")
 async def admin_generation_history(
     request: Request,
@@ -1607,14 +1749,12 @@ async def admin_generation_history(
     db: AsyncSession = Depends(get_db),
 ):
     """生圖歷史紀錄頁面。"""
-    query = (
+    query = _apply_generation_history_filters(
         select(Card, Student.student_id, Student.name)
         .join(Student, Card.student_id == Student.id)
-        .where(Card.job_id.isnot(None))
-        .order_by(Card.created_at.desc())
+        .order_by(Card.created_at.desc()),
+        status_filter,
     )
-    if status_filter in ("generating", "completed", "failed"):
-        query = query.where(Card.status == status_filter)
 
     rows = (await db.execute(query)).all()
 
@@ -1650,6 +1790,9 @@ async def admin_generation_history(
             "student_id": sid,
             "student_name": name,
             "status": card.status,
+            "thumbnail_url": card.thumbnail_url,
+            "image_url": card.image_url,
+            "detail_url": f"/admin/cards/{card.id}",
             "created_at_fmt": _fmt(start_local),
             "generated_at_fmt": _fmt(end_local),
             "duration": _duration(start_local, end_local),
@@ -1664,6 +1807,134 @@ async def admin_generation_history(
             "status_filter": status_filter,
         },
     )
+
+
+@router.get("/admin/generation-history/export")
+async def admin_generation_history_export(
+    status_filter: str = "all",
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Download generation history as CSV."""
+    query = _apply_generation_history_filters(
+        select(Card, Student.student_id, Student.name)
+        .join(Student, Card.student_id == Student.id)
+        .order_by(Card.created_at.desc()),
+        status_filter,
+    )
+
+    rows = (await db.execute(query)).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "card_id",
+        "job_id",
+        "student_id",
+        "student_name",
+        "status",
+        "created_at_utc",
+        "generated_at_utc",
+        "thumbnail_url",
+        "image_url",
+    ])
+    for card, sid, name in rows:
+        writer.writerow([
+            card.id,
+            card.job_id or "",
+            sid or "",
+            name or "",
+            card.status or "",
+            card.created_at.isoformat() if card.created_at else "",
+            card.generated_at.isoformat() if card.generated_at else "",
+            card.thumbnail_url or "",
+            card.image_url or "",
+        ])
+
+    filename = f"generation-history-{status_filter}.csv"
+    return StreamingResponse(
+        iter([output.getvalue().encode("utf-8-sig")]),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.delete("/api/admin/generation-history")
+async def api_admin_generation_history_clear(
+    status_filter: str = "all",
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Hide generation-history records from the history page."""
+    stmt = update(Card).where(
+        Card.job_id.isnot(None),
+        Card.history_visible.is_(True),
+    )
+    if status_filter in ("generating", "completed", "failed"):
+        stmt = stmt.where(Card.status == status_filter)
+
+    result = await db.execute(
+        stmt.values(history_visible=False)
+    )
+    await db.commit()
+    return {"hidden": result.rowcount or 0}
+
+
+@router.delete("/api/admin/generation-history/{card_id}/hide")
+async def api_admin_generation_history_hide_one(
+    card_id: int,
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Hide one card from the generation-history page only."""
+    card = await _get_generation_history_card(db, card_id)
+    if not card.history_visible:
+        return {"hidden": False, "card_id": card.id}
+
+    card.history_visible = False
+    await db.commit()
+    return {"hidden": True, "card_id": card.id}
+
+
+@router.delete("/api/admin/generation-history/{card_id}/record")
+async def api_admin_generation_history_delete_record(
+    card_id: int,
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete one card row from the web database only."""
+    card = await _get_generation_history_card(db, card_id)
+    await db.delete(card)
+    await db.commit()
+    return {"deleted": True, "card_id": card_id}
+
+
+@router.delete("/api/admin/generation-history/{card_id}/full")
+async def api_admin_generation_history_delete_full(
+    card_id: int,
+    user: Student = Depends(require_teacher),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete storage assets for one card, then delete its web DB row."""
+    card = await _get_generation_history_card(db, card_id)
+    storage = get_storage_service()
+
+    try:
+        storage_result = await storage.delete_card_assets(card_id)
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"儲存端刪除失敗：{exc}",
+        ) from exc
+
+    await db.delete(card)
+    await db.commit()
+
+    return {
+        "deleted": True,
+        "card_id": card_id,
+        "storage": storage_result,
+    }
 
 
 # ─── Simulation Generation ────────────────────────────────────────────

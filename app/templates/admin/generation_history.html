@@ -1,9 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}生圖歷史紀錄{% endblock %}
+{% block title %}生圖記錄{% endblock %}
 
 {% block content %}
-<!-- Header -->
 <div class="flex flex-col gap-3 w-full shrink-0 sm:flex-row sm:items-center sm:justify-between">
   <div class="flex items-center gap-3">
     <a href="/admin"
@@ -14,19 +13,31 @@
     <span class="text-[var(--rpg-gold-dark)]">/</span>
     <div class="flex items-center gap-2">
       <i data-lucide="history" class="w-5 h-5 text-[var(--rpg-gold)]"></i>
-      <h1 class="font-tc text-lg font-black tracking-widest text-[var(--rpg-gold)]">生圖歷史紀錄</h1>
+      <h1 class="font-tc text-lg font-black tracking-widest text-[var(--rpg-gold)]">生圖記錄</h1>
     </div>
   </div>
-  <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">
-    共 {{ records | length }} 筆紀錄（時間 UTC+8）
-  </span>
+  <div class="flex items-center gap-2 flex-wrap">
+    <a href="/admin/generation-history/export?status_filter={{ status_filter }}"
+       class="flex items-center gap-1.5 rounded px-3 py-2 bg-[var(--rpg-bg-panel)] border-2 border-[var(--rpg-gold-dark)] font-tc text-xs font-bold text-[var(--rpg-text-primary)] hover:border-[var(--rpg-gold)] transition-colors">
+      <i data-lucide="download" class="w-3.5 h-3.5 text-[var(--rpg-gold)]"></i>
+      下載當前記錄
+    </a>
+    <button type="button"
+            onclick="clearGenerationHistory()"
+            class="flex items-center gap-1.5 rounded px-3 py-2 bg-[var(--rpg-bg-panel)] border-2 border-red-700 font-tc text-xs font-bold text-red-400 hover:bg-red-950/30 transition-colors">
+      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+      清空歷史頁面記錄
+    </button>
+    <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">
+      共 {{ records | length }} 筆，時間顯示為 UTC+8
+    </span>
+  </div>
 </div>
 
-<!-- Status filter tabs -->
 <div class="flex gap-2 flex-wrap shrink-0">
   {% set tabs = [
     ("all", "全部"),
-    ("generating", "進行中"),
+    ("generating", "生成中"),
     ("completed", "已完成"),
     ("failed", "失敗"),
   ] %}
@@ -43,49 +54,56 @@
   {% endfor %}
 </div>
 
-<!-- History table -->
 <div class="flex flex-col flex-1 min-h-0 rounded bg-[var(--rpg-bg-panel)]
             border-2 border-[var(--rpg-gold-dark)] overflow-auto scrollbar-hide">
-  <div class="min-w-[820px]">
-    <!-- Header row -->
+  <div class="min-w-[1280px]">
     <div class="flex items-center gap-3 px-5 py-3 bg-[var(--rpg-bg-card)]
                 border-b border-[var(--rpg-gold-dark)] sticky top-0 z-10">
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-16 text-center">卡片</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-16 text-center">縮圖</span>
       <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-24">Job ID</span>
       <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-24">學號</span>
-      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] flex-1">姓名</span>
-      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-36 text-center">開始時間</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] flex-[1.6] min-w-[11rem]">姓名</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-36 text-center">建立時間</span>
       <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-36 text-center">完成時間</span>
-      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-20 text-center">生成耗時</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-20 text-center">耗時</span>
       <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-20 text-center">狀態</span>
+      <span class="font-tc text-xs font-bold text-[var(--rpg-gold)] w-32 text-center">操作</span>
     </div>
 
-    <!-- Data rows -->
     {% if records %}
     {% for r in records %}
     <div class="flex items-center gap-3 px-5 py-2.5 border-b border-[var(--rpg-bg-input)]
                 hover:bg-[var(--rpg-bg-card)]/50
                 {% if loop.index is odd %}bg-[var(--rpg-bg-card)]/20{% endif %}">
-      <!-- Job ID -->
+      <a href="{{ r.detail_url }}"
+         class="w-16 text-center font-mono text-xs text-[var(--rpg-gold)] hover:text-[var(--rpg-gold-bright)] transition-colors">
+        #{{ r.card_id }}
+      </a>
+      <a href="{{ r.detail_url }}" class="w-16 flex justify-center">
+        {% if r.thumbnail_url %}
+        <img src="{{ r.thumbnail_url }}" alt="card {{ r.card_id }}"
+             class="w-10 h-14 rounded border border-[var(--rpg-gold-dark)] object-cover hover:border-[var(--rpg-gold)] transition-colors">
+        {% else %}
+        <div class="w-10 h-14 rounded border border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-card)] flex items-center justify-center">
+          <i data-lucide="image-off" class="w-3.5 h-3.5 text-[var(--rpg-text-secondary)]"></i>
+        </div>
+        {% endif %}
+      </a>
       <span class="font-mono text-xs text-[var(--rpg-text-secondary)] w-24 truncate"
             title="{{ r.job_id }}">{{ r.job_id[:8] }}..</span>
-      <!-- Student ID -->
       <span class="font-tc text-xs text-[var(--rpg-gold)] w-24">{{ r.student_id }}</span>
-      <!-- Name -->
-      <span class="font-tc text-xs text-[var(--rpg-text-primary)] flex-1">{{ r.student_name }}</span>
-      <!-- Created at (UTC+8) -->
+      <span class="font-tc text-xs text-[var(--rpg-text-primary)] flex-[1.6] min-w-[11rem] truncate" title="{{ r.student_name }}">{{ r.student_name }}</span>
       <span class="font-mono text-xs text-[var(--rpg-text-secondary)] w-36 text-center">
         {{ r.created_at_fmt or '--' }}
       </span>
-      <!-- Generated at (UTC+8) -->
       <span class="font-mono text-xs text-[var(--rpg-text-secondary)] w-36 text-center">
         {{ r.generated_at_fmt or '--' }}
       </span>
-      <!-- Duration -->
       <span class="font-mono text-xs w-20 text-center
                    {% if r.duration %}text-[var(--rpg-gold)]{% else %}text-[var(--rpg-text-secondary)]{% endif %}">
         {{ r.duration or '--' }}
       </span>
-      <!-- Status badge -->
       <div class="w-20 flex justify-center">
         {% if r.status == 'completed' %}
         <span class="flex items-center gap-1 rounded px-2 py-0.5
@@ -113,14 +131,138 @@
         </span>
         {% endif %}
       </div>
+      <div class="w-32 flex items-center justify-center">
+        <div class="relative inline-block text-left">
+          <button type="button"
+                  onclick="toggleActionMenu(event, {{ r.card_id }})"
+                  class="inline-flex items-center gap-1.5 rounded px-3 py-1.5 border border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-card)] font-tc text-xs text-[var(--rpg-text-primary)] hover:border-[var(--rpg-gold)] transition-colors">
+            <i data-lucide="menu" class="w-3.5 h-3.5 text-[var(--rpg-gold)]"></i>
+            操作
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-[var(--rpg-text-secondary)]"></i>
+          </button>
+          <div id="action-menu-{{ r.card_id }}"
+               class="hidden absolute right-0 mt-2 w-44 rounded border border-[var(--rpg-gold-dark)] bg-[var(--rpg-bg-panel)] shadow-lg z-20 overflow-hidden">
+            <button type="button"
+                    onclick="hideHistoryRecord({{ r.card_id }})"
+                    class="w-full px-3 py-2 text-left font-tc text-xs text-[var(--rpg-text-primary)] hover:bg-[var(--rpg-bg-card)] transition-colors">
+              隱藏此筆
+            </button>
+            <button type="button"
+                    onclick="removeCardRecord({{ r.card_id }})"
+                    class="w-full px-3 py-2 text-left font-tc text-xs text-orange-300 hover:bg-orange-950/30 transition-colors">
+              移除卡牌紀錄
+            </button>
+            <button type="button"
+                    onclick="deleteCardCompletely({{ r.card_id }})"
+                    class="w-full px-3 py-2 text-left font-tc text-xs text-red-300 hover:bg-red-950/30 transition-colors">
+              完全刪除卡牌
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     {% endfor %}
     {% else %}
     <div class="px-5 py-12 text-center">
       <i data-lucide="inbox" class="w-8 h-8 text-[var(--rpg-text-secondary)] mx-auto mb-3"></i>
-      <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">尚無生圖紀錄</p>
+      <p class="font-tc text-xs text-[var(--rpg-text-secondary)]">目前沒有生圖記錄。</p>
     </div>
     {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+function closeAllActionMenus() {
+  document.querySelectorAll('[id^="action-menu-"]').forEach((menu) => {
+    menu.classList.add('hidden');
+  });
+}
+
+function toggleActionMenu(event, cardId) {
+  event.stopPropagation();
+  const menu = document.getElementById(`action-menu-${cardId}`);
+  const wasHidden = menu.classList.contains('hidden');
+  closeAllActionMenus();
+  if (wasHidden) {
+    menu.classList.remove('hidden');
+  }
+}
+
+document.addEventListener('click', closeAllActionMenus);
+
+async function clearGenerationHistory() {
+  if (!window.confirm('確定要清空目前篩選結果中的歷史頁面記錄嗎？此操作只會將這些卡牌自生圖記錄頁隱藏，不會刪除 cards 資料，也不會刪除儲存端圖片檔。')) {
+    return;
+  }
+  try {
+    const resp = await fetch(`/api/admin/generation-history?status_filter={{ status_filter }}`, { method: 'DELETE' });
+    const data = await resp.json();
+    if (!resp.ok) {
+      window.alert(data.detail || '清除失敗');
+      return;
+    }
+    window.alert(`已隱藏 ${data.hidden || 0} 筆歷史記錄`);
+    window.location.reload();
+  } catch (e) {
+    window.alert('網路錯誤，請稍後再試');
+  }
+}
+
+async function hideHistoryRecord(cardId) {
+  if (!window.confirm(`確定要隱藏卡牌 #${cardId} 的歷史記錄嗎？此操作只會讓它從生圖記錄頁消失，不會刪除卡牌資料與儲存端圖片檔。`)) {
+    return;
+  }
+  try {
+    const resp = await fetch(`/api/admin/generation-history/${cardId}/hide`, { method: 'DELETE' });
+    const data = await resp.json();
+    if (!resp.ok) {
+      window.alert(data.detail || '隱藏失敗');
+      return;
+    }
+    window.alert(`卡牌 #${cardId} 已自生圖記錄頁隱藏`);
+    window.location.reload();
+  } catch (e) {
+    window.alert('網路錯誤，請稍後再試');
+  }
+}
+
+async function removeCardRecord(cardId) {
+  if (!window.confirm(`確定要移除卡牌 #${cardId} 的資料庫紀錄嗎？此操作會刪除 vm-web-server 資料庫中的這筆 cards 資料，但不會刪除 vm-db-storage 的圖片檔與 metadata。`)) {
+    return;
+  }
+  try {
+    const resp = await fetch(`/api/admin/generation-history/${cardId}/record`, { method: 'DELETE' });
+    const data = await resp.json();
+    if (!resp.ok) {
+      window.alert(data.detail || '移除失敗');
+      return;
+    }
+    window.alert(`卡牌 #${cardId} 的資料庫紀錄已移除`);
+    window.location.reload();
+  } catch (e) {
+    window.alert('網路錯誤，請稍後再試');
+  }
+}
+
+async function deleteCardCompletely(cardId) {
+  if (!window.confirm(`確定要完全刪除卡牌 #${cardId} 嗎？此操作只會刪除這一張卡牌：先刪除 vm-db-storage 中與該 card_id 綁定的圖片檔與 metadata，再刪除 vm-web-server 的 cards 紀錄，不會影響其他卡牌。`)) {
+    return;
+  }
+  try {
+    const resp = await fetch(`/api/admin/generation-history/${cardId}/full`, { method: 'DELETE' });
+    const data = await resp.json();
+    if (!resp.ok) {
+      window.alert(data.detail || '完全刪除失敗');
+      return;
+    }
+    const deletedFiles = data.storage?.deleted_files ?? 0;
+    window.alert(`卡牌 #${cardId} 已完全刪除；儲存端刪除 ${deletedFiles} 個檔案。`);
+    window.location.reload();
+  } catch (e) {
+    window.alert('網路錯誤，請稍後再試');
+  }
+}
+</script>
 {% endblock %}
