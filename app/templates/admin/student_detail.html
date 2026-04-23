@@ -81,6 +81,7 @@
     <div class="mt-4 flex items-center justify-between">
       <span class="font-tc text-xs text-[var(--rpg-text-secondary)]">
         註冊於 {{ student.created_at | format_taipei('%Y-%m-%d') if student.created_at else '—' }}
+        ｜ 最近登入 {{ student.last_login_at | format_taipei('%Y-%m-%d %H:%M') if student.last_login_at else '—' }}
       </span>
       <button type="button" onclick="saveStudent()"
               class="flex items-center gap-2 rounded px-4 py-2

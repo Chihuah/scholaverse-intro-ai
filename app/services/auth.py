@@ -1,6 +1,6 @@
 """Authentication service - Cloudflare Zero Trust header parsing + user lookup."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
@@ -55,21 +55,36 @@ async def bind_student_email(
     return student
 
 
-async def award_daily_login(db: AsyncSession, student: Student) -> bool:
-    """Award 1 token for the first login of each calendar day (Asia/Taipei).
+async def track_daily_login(db: AsyncSession, student: Student) -> bool:
+    """Record the first login of each calendar day (Asia/Taipei) for any role.
 
-    Returns True if the bonus was awarded, False if already awarded today.
+    Sets ``last_login_date`` and ``last_login_at``. Students additionally get
+    a 1-token daily login bonus (first time each day only).
+
+    Returns True if this call triggered a first-of-day daily bonus for a
+    student, False otherwise (already tracked today, or non-student role).
     """
     today = datetime.now(TAIPEI_TZ).date()
-    if student.last_login_date == today:
+    fully_tracked = (
+        student.last_login_date == today and student.last_login_at is not None
+    )
+    if fully_tracked:
         return False
 
-    student.tokens += 1
+    is_first_login_today = student.last_login_date != today
+
     student.last_login_date = today
-    db.add(TokenTransaction(student_id=student.id, amount=1, reason="每日登入獎勵"))
+    student.last_login_at = datetime.now(timezone.utc)
+
+    awarded = False
+    if is_first_login_today and student.role == "student":
+        student.tokens += 1
+        db.add(TokenTransaction(student_id=student.id, amount=1, reason="每日登入獎勵"))
+        awarded = True
+
     await db.commit()
     await db.refresh(student)
-    return True
+    return awarded
 
 
 def get_cf_email(headers: dict) -> str | None:

@@ -19,6 +19,7 @@ class Student(Base):
     role: Mapped[str] = mapped_column(String, nullable=False, default="student")
     tokens: Mapped[int] = mapped_column(Integer, default=0)
     last_login_date: Mapped[date | None] = mapped_column(Date, nullable=True, default=None)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
