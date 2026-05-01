@@ -2078,6 +2078,11 @@ async def admin_generation_history(
             "created_at_fmt": _fmt(start_local),
             "generated_at_fmt": _fmt(end_local),
             "duration": _duration(start_local, end_local),
+            # Cloud generation (Phase 1a)
+            "backend_used": card.backend_used or "local",
+            "cloud_model": card.cloud_model,
+            "fallback_from_cloud": bool(card.fallback_from_cloud),
+            "cloud_error": card.cloud_error,
         })
 
     return templates.TemplateResponse(
@@ -2350,6 +2355,10 @@ async def api_admin_simulation_generate(
     level: int = max(1, min(100, int(body.get("level", 50))))
     rarity_input: str = body.get("rarity", "auto")
     nickname: str = body.get("nickname", "Admin Test") or "Admin Test"
+    backend_input: str = (body.get("backend") or "local").strip().lower()
+    if backend_input not in ("local", "cloud"):
+        raise HTTPException(status_code=400, detail="backend 必須為 local 或 cloud")
+    cloud_model_override: str | None = body.get("cloud_model") or None
 
     seed_raw = body.get("seed")
     requested_seed: int | None = None
@@ -2385,6 +2394,7 @@ async def api_admin_simulation_generate(
         is_latest=False,
         is_display=False,
         is_hidden=True,
+        backend_used=backend_input,  # 預設為提交時選的 backend；若 fallback callback 會覆寫
     )
     db.add(new_card)
     await db.commit()
@@ -2407,6 +2417,8 @@ async def api_admin_simulation_generate(
             learning_data=learning_data,
             seed=requested_seed,
             ollama_model_override=ollama_model,
+            backend=backend_input,
+            cloud_model=cloud_model_override,
         )
         new_card.status = "generating"
         new_card.job_id = job_id

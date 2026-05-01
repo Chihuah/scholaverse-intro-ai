@@ -129,6 +129,18 @@
                     focus:outline-none focus:border-[var(--rpg-gold)]">
       <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">-1 或留空代表隨機值</span>
     </div>
+    <!-- Backend (Phase 1a) -->
+    <div class="flex flex-col gap-2">
+      <label for="backend-select" class="font-tc text-xs font-bold text-[var(--rpg-text-secondary)]">生圖後端</label>
+      <select id="backend-select"
+              class="rounded px-2 py-1.5 bg-[var(--rpg-bg-card)] border border-[var(--rpg-gold-dark)]
+                     font-tc text-xs text-[var(--rpg-text-primary)] w-44
+                     focus:outline-none focus:border-[var(--rpg-gold)] cursor-pointer">
+        <option value="local" selected>本地 SD（預設）</option>
+        <option value="cloud">雲端 GPT-Image-2</option>
+      </select>
+      <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">雲端失敗會自動回退本地</span>
+    </div>
   </div>
 </div>
 
@@ -310,6 +322,7 @@ async function submitSimulation() {
       return;
     }
   }
+  const backend = document.getElementById('backend-select').value || 'local';
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
@@ -320,7 +333,7 @@ async function submitSimulation() {
     const resp = await fetch('/api/admin/simulation/generate', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({card_config, level, rarity, nickname, seed})
+      body: JSON.stringify({card_config, level, rarity, nickname, seed, backend})
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));

@@ -52,6 +52,13 @@ class GenerationCallbackBody(BaseModel):
     lora_used: str | None = None
     seed: int | None = None
     error: str | None = None
+    # Cloud generation (Phase 1a) ----------------------------------------
+    backend_used: str = "local"
+    cloud_model: str | None = None
+    cloud_mode: str | None = None
+    fallback_from_cloud: bool = False
+    cloud_error: str | None = None
+    reference_card_id: int | None = None
 
 
 @router.post("/generation-callback")
@@ -93,9 +100,25 @@ async def generation_callback(
                 card.generated_at = datetime.now(timezone.utc)
         else:
             card.generated_at = datetime.now(timezone.utc)
-        logger.info("Card %d generation completed (job %s)", body.card_id, body.job_id)
+        # Cloud generation metadata (Phase 1a)
+        card.backend_used = body.backend_used or "local"
+        card.cloud_model = body.cloud_model
+        card.cloud_mode = body.cloud_mode
+        card.fallback_from_cloud = bool(body.fallback_from_cloud)
+        card.cloud_error = body.cloud_error
+        if body.reference_card_id is not None:
+            card.reference_card_id = body.reference_card_id
+        logger.info(
+            "Card %d generation completed (job %s, backend=%s, fallback=%s)",
+            body.card_id, body.job_id, card.backend_used, card.fallback_from_cloud,
+        )
     else:
         card.status = "failed"
+        # Even on failed, capture cloud error if it was attempted
+        if body.cloud_error:
+            card.cloud_error = body.cloud_error
+        if body.fallback_from_cloud:
+            card.fallback_from_cloud = True
         logger.warning(
             "Card %d generation failed (job %s): %s",
             body.card_id, body.job_id, body.error,

@@ -30,6 +30,9 @@ class AIWorkerService(ABC):
         learning_data: dict,
         seed: int | None = None,
         ollama_model_override: str | None = None,
+        backend: str = "local",
+        cloud_model: str | None = None,
+        reference_card_id: int | None = None,
     ) -> str:
         """Submit learning data + card config to ai-worker for prompt generation
         and image creation. Returns job_id.
@@ -47,6 +50,12 @@ class AIWorkerService(ABC):
             RPG attribute configuration.
         learning_data : dict
             Unit scores and overall completion.
+        backend : str
+            "local" (default) for sd-cli, "cloud" for OpenAI gpt-image-2.
+        cloud_model : str | None
+            Override cloud model id (testing); ai-worker uses its default if None.
+        reference_card_id : int | None
+            Phase 1b reference card for image-edit mode.
         """
 
     @abstractmethod
@@ -70,6 +79,9 @@ class RealAIWorkerService(AIWorkerService):
         learning_data: dict,
         seed: int | None = None,
         ollama_model_override: str | None = None,
+        backend: str = "local",
+        cloud_model: str | None = None,
+        reference_card_id: int | None = None,
     ) -> str:
         job_id = str(uuid.uuid4())
         payload = {
@@ -83,6 +95,9 @@ class RealAIWorkerService(AIWorkerService):
             "seed": seed,
             "ollama_model_override": ollama_model_override,
             "callback_url": _callback_url(),
+            "backend": backend,
+            "cloud_model": cloud_model,
+            "reference_card_id": reference_card_id,
         }
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -128,6 +143,9 @@ class MockAIWorkerService(AIWorkerService):
         learning_data: dict,
         seed: int | None = None,
         ollama_model_override: str | None = None,
+        backend: str = "local",
+        cloud_model: str | None = None,
+        reference_card_id: int | None = None,
     ) -> str:
         job_id = str(uuid.uuid4())
         self._jobs[job_id] = {
@@ -138,6 +156,9 @@ class MockAIWorkerService(AIWorkerService):
             "student_nickname": student_nickname,
             "card_config": card_config,
             "requested_seed": seed,
+            "backend": backend,
+            "cloud_model": cloud_model,
+            "reference_card_id": reference_card_id,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "image_path": None,
             "thumbnail_path": None,
