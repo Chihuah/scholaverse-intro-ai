@@ -56,6 +56,7 @@ class GenerationCallbackBody(BaseModel):
     backend_used: str = "local"
     cloud_model: str | None = None
     cloud_mode: str | None = None
+    cloud_quality: str | None = None
     fallback_from_cloud: bool = False
     cloud_error: str | None = None
     reference_card_id: int | None = None
@@ -104,6 +105,7 @@ async def generation_callback(
         card.backend_used = body.backend_used or "local"
         card.cloud_model = body.cloud_model
         card.cloud_mode = body.cloud_mode
+        card.cloud_quality = body.cloud_quality
         card.fallback_from_cloud = bool(body.fallback_from_cloud)
         card.cloud_error = body.cloud_error
         if body.reference_card_id is not None:

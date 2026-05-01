@@ -40,6 +40,7 @@ class Card(Base):
     backend_used: Mapped[str] = mapped_column(String, default="local", nullable=False)
     cloud_model: Mapped[str | None] = mapped_column(String, nullable=True)
     cloud_mode: Mapped[str | None] = mapped_column(String, nullable=True)
+    cloud_quality: Mapped[str | None] = mapped_column(String, nullable=True)
     fallback_from_cloud: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     cloud_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     reference_card_id: Mapped[int | None] = mapped_column(Integer, nullable=True)

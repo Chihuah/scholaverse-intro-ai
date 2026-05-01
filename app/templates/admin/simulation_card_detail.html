@@ -79,6 +79,18 @@
         <span class="font-tc text-[10px] text-[var(--rpg-text-primary)]">{{ card.border_style }}</span>
       </div>
       {% endif %}
+      <div class="flex justify-between items-center mb-1 gap-2">
+        <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">生圖後端</span>
+        {% if card.fallback_from_cloud %}
+        <span class="font-tc text-[10px] font-bold text-amber-300" title="{{ card.cloud_error or '雲端失敗，已自動回退本地' }}">雲→本地</span>
+        {% elif card.backend_used == 'cloud' %}
+        <span class="font-tc text-[10px] font-bold text-sky-300">
+          雲端{% if card.cloud_quality %}（{{ card.cloud_quality }}）{% endif %}
+        </span>
+        {% else %}
+        <span class="font-tc text-[10px] text-[var(--rpg-text-primary)]">本地 SD</span>
+        {% endif %}
+      </div>
       <div class="flex justify-between items-center mb-1">
         <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">送出時間</span>
         <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">{{ card.created_at.strftime('%m/%d %H:%M:%S') }}</span>
@@ -195,7 +207,40 @@
           <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">Job ID</span>
           <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] break-all text-right">{{ card.job_id or '-' }}</span>
         </div>
+        <div class="flex justify-between gap-3">
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">後端</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] text-right">{{ card.backend_used or 'local' }}</span>
+        </div>
+        {% if card.cloud_model %}
+        <div class="flex justify-between gap-3">
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">雲端模型</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] break-all text-right">{{ card.cloud_model }}</span>
+        </div>
+        {% endif %}
+        {% if card.cloud_mode %}
+        <div class="flex justify-between gap-3">
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">雲端模式</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] text-right">{{ card.cloud_mode }}</span>
+        </div>
+        {% endif %}
+        {% if card.cloud_quality %}
+        <div class="flex justify-between gap-3">
+          <span class="font-tc text-[10px] text-[var(--rpg-text-secondary)]">雲端品質</span>
+          <span class="font-tc text-[10px] text-[var(--rpg-text-primary)] text-right">{{ card.cloud_quality }}</span>
+        </div>
+        {% endif %}
       </div>
+      {% if card.fallback_from_cloud and card.cloud_error %}
+      <div class="mt-2 pt-2 border-t border-amber-700/40">
+        <div class="flex items-start gap-2">
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0"></i>
+          <div class="min-w-0">
+            <p class="font-tc text-[10px] font-bold text-amber-300 mb-0.5">雲端失敗已回退本地</p>
+            <p class="font-tc text-[10px] text-amber-200/80 break-words">{{ card.cloud_error }}</p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
     {% endif %}
 
