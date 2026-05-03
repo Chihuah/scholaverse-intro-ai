@@ -16,6 +16,7 @@ from app.models.student import Student
 from app.models.token_transaction import TokenTransaction
 from app.models.unit import Unit
 from app.services.scoring import get_available_options
+from app.services.system_settings import get_system_setting
 from app.templating import templates
 
 # Display labels for each unit's unlocked attribute
@@ -404,6 +405,25 @@ async def unit_detail(
             "available": available,
             "attr_label": UNIT_ATTR_LABELS.get(unit_code, unit.unlock_attribute),
             "guest_mode": settings.GUEST_MODE,
+        },
+    )
+
+
+@router.get("/atelier", response_class=HTMLResponse)
+async def atelier(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: Student | None = Depends(get_current_user_or_guest),
+):
+    """肖像繪製所 — 呈現雙畫師世界觀，根據 IMAGE_BACKEND 高亮當值畫師。"""
+    image_backend = await get_system_setting(db, "image_backend")
+    return templates.TemplateResponse(
+        request,
+        "atelier.html",
+        {
+            "user": user,
+            "guest_mode": settings.GUEST_MODE,
+            "image_backend": image_backend,
         },
     )
 
